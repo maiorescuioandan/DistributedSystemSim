@@ -1,0 +1,8 @@
+Process
+requiredMemory 2000
+deadline 10
+CodeBase
+0 100
+1 150 0
+0 100
+1 100 20
