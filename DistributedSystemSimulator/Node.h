@@ -18,9 +18,6 @@ public:
 
 	// Getters / setters
 	double GetTime();
-
-	void CreateLogFile();
-	void TestLogFile();
 private:
 	// Methods
 	void Tick(bool o_deadline);

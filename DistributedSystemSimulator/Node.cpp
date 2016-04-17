@@ -190,54 +190,6 @@ void CNode::CreateMemPages()
 	}
 }
 
-void CNode::CreateLogFile()
-{
-	std::ostringstream stringStream;
-	stringStream << "Node" << m_id << ".log";
-	namespace logging = boost::log;
-	namespace sinks = boost::log::sinks;
-	namespace src = boost::log::sources;
-	namespace expr = boost::log::expressions;
-	namespace attrs = boost::log::attributes;
-	namespace keywords = boost::log::keywords;
-	//boost::log::add_file_log
-	//	(
-	//	boost::log::keywords::file_name = stringStream.str(),                                        /*< file name pattern >*/
-	//	boost::log::keywords::rotation_size = 10 * 1024 * 1024,                                   /*< rotate files every 10 MiB... >*/
-	//	boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0), /*< ...or at midnight >*/
-	//	boost::log::keywords::format = "%Message%"
-	//	);
-	//boost::log::core::get()->set_filter
-	//	(
-	//	boost::log::trivial::severity >= boost::log::trivial::info
-	//	);
-	//boost::log::add_common_attributes();
-	// Construct the sink
-	//typedef sinks::synchronous_sink< sinks::text_ostream_backend > text_sink;
-	//boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
-	//
-	//// Add a stream to write log to
-	//sink->locked_backend()->add_stream(
-	//	boost::make_shared< std::ofstream >("sample.log"));
-	//
-	//// Register the sink in the logging core
-	//logging::core::get()->add_sink(sink);
-}
-
-void CNode::TestLogFile()
-{
-	//	boost::log::add_common_attributes();
-	using namespace boost::log::trivial;
-	boost::log::sources::severity_logger< severity_level > m_lg;
-
-	BOOST_LOG_SEV(m_lg, trace) << "test 1";
-	BOOST_LOG_SEV(m_lg, debug) << "test 2";
-	BOOST_LOG_SEV(m_lg, info) << "test 3";
-	BOOST_LOG_SEV(m_lg, warning) << "test 4";
-	BOOST_LOG_SEV(m_lg, error) << "test 5";
-	BOOST_LOG_SEV(m_lg, fatal) << "test 6";
-}
-
 //////////////////////////////////////////////////////////////////////////
 // ProcessException Class implementation below
 //////////////////////////////////////////////////////////////////////////

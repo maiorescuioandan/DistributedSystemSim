@@ -12,6 +12,10 @@ public:
 	static CMasterSingleton* s_instance;
 	void TestLogFile();
 	void MainLog(std::string i_string);
+
+	// for node logs
+	void AddNodeLog(uint32_t i_nodeId);
+	void NodeLog(uint32_t i_nodeId, std::string i_string);
 private:
 	void CreateLogFile();
 

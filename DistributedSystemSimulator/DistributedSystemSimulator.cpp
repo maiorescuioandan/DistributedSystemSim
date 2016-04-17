@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Node.h"
 #include "MasterSingleton.h"
+#include "Log.h"
 
 void test_single_node();
 void test_node_time();
@@ -211,6 +212,14 @@ void test_file_config_node_with_singleton()
 	if (!node.AddProcess(new CProcess("Config/Process1.txt")))
 		node.AddProcess(new CProcess("Config/Process2.txt"));
 
-	node.CreateLogFile();
-	node.TestLogFile();
+	CMasterSingleton::GetInstance();
+	CLog test_log = CLog("Main");
+	test_log.Write("test 1");
+	test_log.Write("test 2");
+	test_log.Write("test 3");
+	CLog test_log_2 = CLog("Node1");
+	test_log_2.Write("test 4");
+	test_log_2.Write("test 5");
+	test_log_2.Write("test 6");
+	test_log.Write("test 7");
 }
