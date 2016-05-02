@@ -2,6 +2,7 @@
 
 #include "Process.h"
 #include "MemPage.h"
+#include "Log.h"
 
 class CNode
 {
@@ -15,14 +16,25 @@ public:
 	bool RemoveProcess(uint32_t i_processId);
 	void RunToTime(double i_time, bool &o_deadline);
 	void PushRun();
+	void WriteLog(std::string i_string);
 
 	// Getters / setters
 	double GetTime();
+	double GetCurrentTimeTemp();
+	uint64_t GetPageSize();
+	uint32_t GetRunningProcessIndex();
+	void SetRunningProcess(uint32_t i_processIndex);
+	uint32_t GetProcessCount();
+	CProcess* GetProcess(uint32_t i_processIndex);
+	// the stream must be public since it is not copyable
+	std::stringstream m_tempStringStream;
 private:
 	// Methods
 	void Tick(bool o_deadline);
-	void CreateMemPages();
-
+	void PostCreate();
+	void CreateLog();
+	
+	uint32_t m_runningProcessIndex;
 	uint32_t m_id;
 	// Configuration 
 	uint64_t m_memorySize;
@@ -32,10 +44,14 @@ private:
 	//CAlgorithm
 	
 	// Time
+	
+	//counts how many ticks have been done since the program processor is running
 	uint64_t	m_ticksDone;
 	double		m_currentTime;
 	double		m_currentTimeTemp;
 	double		m_timePerTick;
+	
+	CLog		m_log;
 
 	std::vector<CProcess*> m_processVector;
 };

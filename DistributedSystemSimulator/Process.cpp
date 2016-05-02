@@ -166,6 +166,28 @@ void CProcess::Validate()
 	// we have register addresses from 0 to 99
 	if (m_codeBase.GetMaxAddr() > m_memoryRequired - 1)
 		throw new CProcessException(CProcessException::kAddressOutsideRange);
+
+	m_programPointer = 0;
+}
+
+void CProcess::IncrementProgramPointer()
+{
+	++m_programPointer;
+	if (m_programPointer >= m_codeBase.GetCommandCount())
+		m_programPointer = 0;
+}
+
+bool CProcess::IsNextCommandMemAccess()
+{
+	return m_codeBase.IsCommandMemAccess(m_programPointer);
+}
+
+void CProcess::MarkPageAsDirty(uint64_t i_pageSize)
+{
+	uint64_t addressIndex = m_codeBase.GetAddressIndex(m_programPointer);
+	int pageNumber = floor(1.0 * addressIndex / i_pageSize);
+	assert(pageNumber < m_processPageVector.size() - 1);
+	m_processPageVector.at(pageNumber)->MakePageDirty();
 }
 
 //////////////////////////////////////////////////////////////////////////

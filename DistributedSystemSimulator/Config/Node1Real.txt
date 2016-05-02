@@ -1,0 +1,4 @@
+Node
+memorySize 1000
+pageSize 10
+frequency 2.2

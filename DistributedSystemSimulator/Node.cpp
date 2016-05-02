@@ -1,16 +1,7 @@
 #include "stdafx.h"
 #include "Node.h"
 #include "MasterSingleton.h"
-
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/make_shared.hpp>
+#include <boost/format.hpp>
 
 //////////////////////////////////////////////////////////////////////////
 // Node Class implementation below
@@ -31,7 +22,8 @@ CNode::CNode(uint64_t i_memorySize, uint64_t i_pageSize, double i_frequency)
 	m_timePerTick = 1 / i_frequency;
 	m_ticksDone = 0;
 
-	this->CreateMemPages();
+	this->PostCreate();
+	this->CreateLog();
 }
 
 CNode::CNode(std::string i_configFilePath)
@@ -82,7 +74,8 @@ CNode::CNode(std::string i_configFilePath)
 	if (!frequencySet)
 		throw new CNodeException(CNodeException::kFrequencyNotSet);
 
-	this->CreateMemPages();
+	this->PostCreate();
+	this->CreateLog();
 }
 
 CNode::~CNode()
@@ -117,13 +110,23 @@ bool CNode::MemAlloc(CProcess* i_process)
 
 bool CNode::AddProcess(CProcess* process)
 {
+	this->WriteLog("# AddProcessStart");
 	bool rValue = false;
 	if (MemAlloc(process))
 	{
 		m_processVector.push_back(process);
+
+		std::stringstream oLog;
+		oLog << boost::format("OK PID %1% MEMREQ %2% DEADLINE %3%") % process->GetId() % process->GetMemoryRequired() % process->GetDeadline();
+		this->WriteLog(oLog.str());
+
 		return true;
 	}
 	
+	std::stringstream oLog;
+	oLog << boost::format("FAIL PID %1%") % process->GetId();
+	this->WriteLog(oLog.str());
+
 	return rValue;
 }
 
@@ -180,14 +183,65 @@ double CNode::GetTime()
 	return m_currentTime;
 }
 
-void CNode::CreateMemPages()
+void CNode::PostCreate()
 {
+	m_runningProcessIndex = 0;
 	CMemPage* memPage;
 	for (uint32_t i = 0; i < m_memorySize / m_pageSize; ++i)
 	{
 		memPage = new CMemPage(i);
 		m_nodePageVector.push_back(memPage);
 	}
+}
+
+void CNode::CreateLog()
+{
+	std::stringstream ss;
+	ss << "Node" << m_id;
+	m_log = CLog(ss.str(), false);
+	
+	std::stringstream oLog;
+	oLog << boost::format("Created node with id %1%") % m_id;
+	this->WriteLog(oLog.str());
+	
+	
+	CMasterSingleton::GetInstance()->MainLog(oLog.str());
+
+}
+
+void CNode::WriteLog(std::string i_string)
+{
+	m_log.Write(i_string);
+}
+
+uint32_t CNode::GetRunningProcessIndex()
+{
+	return m_runningProcessIndex;
+}
+
+double CNode::GetCurrentTimeTemp()
+{
+	return m_currentTimeTemp;
+}
+
+uint64_t CNode::GetPageSize()
+{
+	return m_pageSize;
+}
+
+void CNode::SetRunningProcess(uint32_t i_processIndex)
+{
+	m_runningProcessIndex = i_processIndex;
+}
+
+uint32_t CNode::GetProcessCount()
+{
+	return m_processVector.size();
+}
+
+CProcess* CNode::GetProcess(uint32_t i_processIndex)
+{
+	return m_processVector.at(i_processIndex);
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -11,13 +11,26 @@ void test_node_time();
 void test_file_config_process();
 void test_file_config_node();
 void run_test_suite();
+void run_2_nodes();
 void test_file_config_node_with_singleton();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 
-	run_test_suite();
+	//run_test_suite();
+	run_2_nodes();
+
 	return 0;
+}
+
+void run_2_nodes()
+{
+	CNode node1("Config/Node1Real.txt");
+	CNode node2("Config/Node2Real.txt");
+
+	node1.AddProcess(new CProcess("Config/Process1.txt"));
+	node1.AddProcess(new CProcess("Config/Process2.txt"));
+	node2.AddProcess(new CProcess("Config/Process1.txt"));
 }
 
 void run_test_suite()
@@ -27,9 +40,6 @@ void run_test_suite()
 	test_file_config_process();
 	test_file_config_node();
 	test_file_config_node_with_singleton();
-	CMasterSingleton::GetInstance()->TestLogFile();
-	CMasterSingleton::GetInstance()->TestLogFile();
-	CMasterSingleton::GetInstance()->TestLogFile();
 }
 
 
@@ -44,7 +54,7 @@ void test_single_node()
 	codeBase.AddCommand(true, 150, 0x800);
 
 	CMasterSingleton::GetInstance()->MainLog("Testing command object");
-		assert(codeBase.GetCommandCount() == 4);
+	assert(codeBase.GetCommandCount() == 4);
 	assert(codeBase.GetMaxAddr() == 2197); //0x800 + 150 - 1
 	CMasterSingleton::GetInstance()->MainLog("Pass");
 
@@ -212,14 +222,7 @@ void test_file_config_node_with_singleton()
 	if (!node.AddProcess(new CProcess("Config/Process1.txt")))
 		node.AddProcess(new CProcess("Config/Process2.txt"));
 
-	CMasterSingleton::GetInstance();
-	CLog test_log = CLog("Main");
-	test_log.Write("test 1");
-	test_log.Write("test 2");
-	test_log.Write("test 3");
-	CLog test_log_2 = CLog("Node1");
-	test_log_2.Write("test 4");
-	test_log_2.Write("test 5");
-	test_log_2.Write("test 6");
-	test_log.Write("test 7");
+	node.WriteLog("TEST");
+	CMasterSingleton::GetInstance()->MainLog("TEST 2");
+	
 }

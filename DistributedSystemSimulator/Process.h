@@ -17,10 +17,13 @@ public:
 	uint64_t GetMemoryRequired();
 	CCodeBase GetCodeBase();
 	uint16_t GetProgramPointer();
+	void IncrementProgramPointer();
 	uint64_t GetDeadline();
 	uint64_t GetLastDeadlineTick();
 	bool AddMemoryPage(CMemPage* i_page);
 	bool ClearMemory();
+	void MarkPageAsDirty(uint64_t i_pageSize);
+	bool IsNextCommandMemAccess();
 private:
 	void Validate();
 

@@ -1,37 +1,6 @@
 #include "stdafx.h"
 #include "Log.h"
 
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-////////////
-#include <boost/log/core.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/smart_ptr/shared_ptr.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-
-#include <boost/log/common.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/attributes.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_multifile_backend.hpp>
-#include <boost/log/expressions/filter.hpp>
-#include <boost/log/expressions/formatters.hpp>
-#include <boost/log/expressions/formatter.hpp>
-#include <boost/log/expressions/formatters/date_time.hpp>
-#include <boost/log/keywords/filter.hpp>
-#include <boost/log/detail/sink_init_helpers.hpp>
-#include <boost/shared_ptr.hpp>
-////////////
-
 std::string CLog::s_creationTimeAndDate = "";
 
 namespace logging = boost::log;

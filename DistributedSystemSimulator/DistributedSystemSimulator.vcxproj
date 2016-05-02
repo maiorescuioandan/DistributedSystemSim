@@ -82,8 +82,11 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AlgorithmBase.h" />
+    <ClInclude Include="AlgorithmRoundRobin.h" />
     <ClInclude Include="CodeBase.h" />
     <ClInclude Include="Command.h" />
+    <ClInclude Include="Log.h" />
     <ClInclude Include="MasterSingleton.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="MemPage.h" />
@@ -93,9 +96,12 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AlgorithmBase.cpp" />
+    <ClCompile Include="AlgorithmRoundRobin.cpp" />
     <ClCompile Include="CodeBase.cpp" />
     <ClCompile Include="Command.cpp" />
     <ClCompile Include="DistributedSystemSimulator.cpp" />
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="MasterSingleton.cpp" />
     <ClCompile Include="MemPage.cpp" />
     <ClCompile Include="Node.cpp" />
