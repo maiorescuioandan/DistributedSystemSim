@@ -31,6 +31,10 @@ void run_2_nodes()
 	node1.AddProcess(new CProcess("Config/Process1.txt"));
 	node1.AddProcess(new CProcess("Config/Process2.txt"));
 	node2.AddProcess(new CProcess("Config/Process1.txt"));
+
+	bool o_deadline;
+	node1.RunToTime(150, o_deadline);
+	node1.PushRun();
 }
 
 void run_test_suite()

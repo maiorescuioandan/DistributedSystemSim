@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "AlgorithmRoundRobin.h"
-
+#include <iomanip>
 
 CAlgorithmRoundRobin::CAlgorithmRoundRobin(uint32_t i_ticksPerProcess)
 {
@@ -27,19 +27,27 @@ void CAlgorithmRoundRobin::Run(CNode *io_node)
 	// pid = pProcess->GetId()
 	// programPointer = pProcess->GetProgramPointer()
 	// isMemAcess = pProcess->IsNextCommandMemAccess();
-	io_node->m_tempStringStream << "RUN " << io_node->GetCurrentTimeTemp() << " " << pProcess->GetId() << " " << pProcess->GetProgramPointer() << " " << pProcess->IsNextCommandMemAccess() << std::endl;
+	io_node->m_tempStringStream << "RUN CrtTime:" << io_node->GetCurrentTimeTemp() << "\tPID:" << pProcess->GetId() << "\tProgramPointer:" << pProcess->GetProgramPointer() << "\tIsMemAccess:" << pProcess->IsNextCommandMemAccess() << std::endl;
 
 	// Step 2:
 	if (pProcess->IsNextCommandMemAccess())
 		pProcess->MarkPageAsDirty(io_node->GetPageSize());
+	pProcess->IncrementProgramPointer();
 
 	// Step 3:
 	--m_ticksLeft;
 	if (m_ticksLeft == 0)
 	{ 
+		m_ticksLeft = m_ticksPerProcess;
 		if (io_node->GetRunningProcessIndex() + 1 >= io_node->GetProcessCount())
 			io_node->SetRunningProcess(0);
 		else
 			io_node->SetRunningProcess(io_node->GetRunningProcessIndex() + 1);
 	}
+}
+
+void CAlgorithmRoundRobin::SetInitialProcess(CNode *io_node)
+{
+	// For round-robin, we set the first process as the initial one
+	io_node->SetRunningProcess(0);
 }

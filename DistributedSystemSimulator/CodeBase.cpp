@@ -50,20 +50,17 @@ uint64_t CCodeBase::GetAddressIndex(uint64_t i_commandIndex)
 	int addressIndex = 0;
 	for (std::vector<CCommand>::iterator it = m_commandVector.begin(); it != m_commandVector.end(); ++it)
 	{
-		if (signedCommandIndex - it->GetCmdCount() < 0)
+		int temp = signedCommandIndex - it->GetCmdCount();
+		if ( temp < 0)
 		{
 			// we should only hit this on a memory access
 			assert(it->IsMemoryAccess());
-			addressIndex += signedCommandIndex;
+			addressIndex = signedCommandIndex + it->GetStartAddr();
 			return addressIndex;
 		}
 		else 
 			signedCommandIndex -= it->GetCmdCount();
 
-		if (it->IsMemoryAccess())
-		{
-			addressIndex += it->GetCmdCount();
-		}
 	}
 	// we should never reach this;
 	assert(1 == 0);

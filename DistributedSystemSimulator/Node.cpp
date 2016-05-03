@@ -2,6 +2,7 @@
 #include "Node.h"
 #include "MasterSingleton.h"
 #include <boost/format.hpp>
+#include "AlgorithmRoundRobin.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Node Class implementation below
@@ -19,8 +20,9 @@ CNode::CNode(uint64_t i_memorySize, uint64_t i_pageSize, double i_frequency)
 	m_frequency = i_frequency;
 	m_currentTime = 0;
 	m_currentTimeTemp = 0;
-	m_timePerTick = 1 / i_frequency;
+	m_timePerTick = 1.0 / i_frequency;
 	m_ticksDone = 0;
+	m_algorithm = NULL;
 
 	this->PostCreate();
 	this->CreateLog();
@@ -29,12 +31,14 @@ CNode::CNode(uint64_t i_memorySize, uint64_t i_pageSize, double i_frequency)
 CNode::CNode(std::string i_configFilePath)
 {
 	m_id = CMasterSingleton::GetInstance()->GetNewNodeId();
+	m_algorithm = NULL;
 	std::ifstream input_file(i_configFilePath);
 	std::string line;
 	uint32_t lineNumber = 0;
 	bool memorySet = false;
 	bool pageSizeSet = false;
 	bool frequencySet = false;
+	bool algorithmSet = false;
 
 	while (std::getline(input_file, line))
 	{
@@ -64,6 +68,15 @@ CNode::CNode(std::string i_configFilePath)
 			m_frequency = std::stof(stringVector[1]);
 			frequencySet = true;
 		}
+		if (stringVector[0] == "algorithm")
+		{
+			algorithmSet = true;
+			if (stringVector[1] == "RR")
+			{
+				// this is the routing robot algorithm
+				m_algorithm = new CAlgorithmRoundRobin(10);
+			}
+		}
 
 	}
 
@@ -73,7 +86,9 @@ CNode::CNode(std::string i_configFilePath)
 		throw new CNodeException(CNodeException::kMemorySizeNotSet);
 	if (!frequencySet)
 		throw new CNodeException(CNodeException::kFrequencyNotSet);
-
+	if (!algorithmSet)
+		throw new CNodeException(CNodeException::kAlgorithmNotSet);
+	m_timePerTick = 1.0 / m_frequency;
 	this->PostCreate();
 	this->CreateLog();
 }
@@ -149,6 +164,7 @@ bool CNode::RemoveProcess(uint32_t i_processId)
 void CNode::Tick(bool o_deadline)
 {
 	++m_ticksDone;
+	m_algorithm->Run(this);
 	m_currentTimeTemp += m_timePerTick;
 }
 
@@ -176,6 +192,8 @@ void CNode::PushRun()
 	if (m_currentTime == m_currentTimeTemp)
 		throw new CNodeException(CNodeException::kCannotPushNothing);
 	m_currentTime = m_currentTimeTemp;
+	m_log.Write(m_tempStringStream.str());
+	m_tempStringStream.str(std::string());
 }
 
 double CNode::GetTime()
@@ -185,6 +203,9 @@ double CNode::GetTime()
 
 void CNode::PostCreate()
 {
+	m_tempStringStream.precision(2);
+	m_tempStringStream.setf(std::ios::fixed, std::ios::floatfield);
+
 	m_runningProcessIndex = 0;
 	CMemPage* memPage;
 	for (uint32_t i = 0; i < m_memorySize / m_pageSize; ++i)

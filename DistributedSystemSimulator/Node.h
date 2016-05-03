@@ -3,6 +3,9 @@
 #include "Process.h"
 #include "MemPage.h"
 #include "Log.h"
+#include "AlgorithmBase.h"
+
+class CAlgorithmBase;
 
 class CNode
 {
@@ -42,7 +45,7 @@ private:
 	double	 m_frequency;
 	std::vector<CMemPage*> m_nodePageVector;
 	//CAlgorithm
-	
+	CAlgorithmBase *m_algorithm;
 	// Time
 	
 	//counts how many ticks have been done since the program processor is running
@@ -65,7 +68,8 @@ public:
 		kCannotPushNothing = 1,
 		kPageSizeNotSet = 2,
 		kMemorySizeNotSet = 3,
-		kFrequencyNotSet = 4
+		kFrequencyNotSet = 4,
+		kAlgorithmNotSet = 5
 	};
 
 	CNodeException(NodeExceptionEnum i_info);
