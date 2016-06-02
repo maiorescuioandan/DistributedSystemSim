@@ -6,6 +6,14 @@
 #include "MasterSingleton.h"
 #include "Log.h"
 
+//FOR MEMORY LEAKS
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+
+
+#include "MemPage.h"
+
 void test_single_node();
 void test_node_time();
 void test_file_config_process();
@@ -13,14 +21,23 @@ void test_file_config_node();
 void run_test_suite();
 void run_2_nodes();
 void test_file_config_node_with_singleton();
+void run_1_node();
+void test_mem_leak();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-
-	//run_test_suite();
 	run_2_nodes();
-
+	_CrtDumpMemoryLeaks();
 	return 0;
+}
+
+void test_mem_leak()
+{
+	for (int i = 0; i < 50; ++i)
+	{
+		CNode node1("Config/Node1Real.txt");
+	}
+
 }
 
 void run_2_nodes()
@@ -31,10 +48,29 @@ void run_2_nodes()
 	node1.AddProcess(new CProcess("Config/Process1.txt"));
 	node1.AddProcess(new CProcess("Config/Process2.txt"));
 	node2.AddProcess(new CProcess("Config/Process1.txt"));
-
+	CNode node3(&node2);
 	bool o_deadline;
-	node1.RunToTime(150, o_deadline);
+	node1.RunToTime(500, o_deadline);
+	node2.RunToTime(500, o_deadline);
 	node1.PushRun();
+	node2.PushRun();
+	for (int i = 0; i < 150000000; ++i)
+	{
+		CNode node4(&node2);
+	}
+	_CrtDumpMemoryLeaks();
+}
+
+void run_1_node()
+{
+	CNode node("Config/Node3Real.txt");
+
+	node.AddProcess(new CProcess("Config/Process3.txt"));
+	node.AddProcess(new CProcess("Config/Process4.txt"));
+	bool o_deadline;
+	node.Init();
+	node.RunToTime(500, o_deadline);
+	node.PushRun();
 }
 
 void run_test_suite()

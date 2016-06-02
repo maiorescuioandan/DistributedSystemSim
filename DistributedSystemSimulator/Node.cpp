@@ -73,7 +73,7 @@ CNode::CNode(std::string i_configFilePath)
 			algorithmSet = true;
 			if (stringVector[1] == "RR")
 			{
-				// this is the routing robot algorithm
+				// this is the round robin algorithm
 				m_algorithm = new CAlgorithmRoundRobin(10);
 			}
 		}
@@ -82,7 +82,7 @@ CNode::CNode(std::string i_configFilePath)
 
 	if (!pageSizeSet)
 		throw new CNodeException(CNodeException::kPageSizeNotSet);
-	if (!memorySet)
+	if (!memorySet)   
 		throw new CNodeException(CNodeException::kMemorySizeNotSet);
 	if (!frequencySet)
 		throw new CNodeException(CNodeException::kFrequencyNotSet);
@@ -91,10 +91,71 @@ CNode::CNode(std::string i_configFilePath)
 	m_timePerTick = 1.0 / m_frequency;
 	this->PostCreate();
 	this->CreateLog();
+	input_file.close();
+}
+
+CNode::CNode(CNode* i_node)
+{
+	m_runningProcessIndex = i_node->m_runningProcessIndex;
+	m_id = i_node->m_id;
+	m_memorySize = i_node->m_memorySize;
+	m_pageSize = i_node->m_pageSize;
+	m_frequency = i_node->m_frequency;
+	m_ticksDone = i_node->m_ticksDone;
+	m_currentTime = i_node->m_currentTime;
+	m_currentTimeTemp = i_node->m_currentTimeTemp;
+	m_timePerTick = i_node->m_timePerTick;
+	if (m_algorithm)
+		delete m_algorithm;
+	m_algorithm = i_node->m_algorithm->Clone();
+	m_log = CLog(i_node->m_log);
+	// This is a delicate process. First we copy all the node mem pages
+	// then we copy all the process pages
+	// and then we have to link the processes to the proper pages they already had in the first place
+	// but with the pointers from the new node
+	for (uint32_t i = 0; i < m_nodePageVector.size(); ++i)
+	{
+		if (m_nodePageVector[i])
+			delete m_nodePageVector[i];
+	}
+	m_nodePageVector.clear();
+	for (uint32_t i = 0; i < i_node->m_nodePageVector.size(); ++i)
+	{
+		CMemPage* temp = new CMemPage(i_node->m_nodePageVector[i]);
+		m_nodePageVector.push_back(temp);
+	}
+	
+	for (uint32_t i = 0; i < m_processVector.size(); ++i)
+	{
+		if (m_processVector[i])
+			delete m_processVector[i];
+	}
+	m_processVector.clear();
+	for (uint32_t i = 0; i < i_node->m_processVector.size(); ++i)
+	{
+		CProcess* temp = new CProcess(i_node->m_processVector[i]);
+		temp->LinkToPages(m_nodePageVector);
+		m_processVector.push_back(temp);
+	}
 }
 
 CNode::~CNode()
 {
+	// Delete all the objects
+	if (m_algorithm)
+		delete m_algorithm;
+	for (uint32_t i = 0; i < m_nodePageVector.size(); ++i)
+	{
+		if (m_nodePageVector[i])
+			delete m_nodePageVector[i];
+	}
+	m_nodePageVector.clear();
+	for (uint32_t i = 0; i < m_nodePageVector.size(); ++i)
+	{
+		if (m_processVector[i])
+			delete m_processVector[i];
+	}
+	m_processVector.clear();
 }
 
 bool CNode::MemAlloc(CProcess* i_process)
@@ -132,7 +193,7 @@ bool CNode::AddProcess(CProcess* process)
 		m_processVector.push_back(process);
 
 		std::stringstream oLog;
-		oLog << boost::format("OK PID %1% MEMREQ %2% DEADLINE %3%") % process->GetId() % process->GetMemoryRequired() % process->GetDeadline();
+		oLog << boost::format("OK PID %1% MEMREQ %2% DEADLINE %3% STARTTIME %4%") % process->GetId() % process->GetMemoryRequired() % process->GetDeadline() %process->GetWakeUpTime();
 		this->WriteLog(oLog.str());
 
 		return true;
@@ -263,6 +324,11 @@ uint32_t CNode::GetProcessCount()
 CProcess* CNode::GetProcess(uint32_t i_processIndex)
 {
 	return m_processVector.at(i_processIndex);
+}
+
+void CNode::Init()
+{
+	m_algorithm->SetInitialProcess(this);
 }
 
 //////////////////////////////////////////////////////////////////////////

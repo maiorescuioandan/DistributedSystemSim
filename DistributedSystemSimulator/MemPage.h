@@ -4,6 +4,7 @@ class CMemPage
 {
 public:
 	CMemPage(uint32_t i_pageId);
+	CMemPage(CMemPage* i_memPage);
 	~CMemPage();
 	void SetPageOwnership(bool i_owned);
 	bool GetPageOwnership();

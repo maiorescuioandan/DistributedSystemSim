@@ -14,7 +14,6 @@ CProcess::CProcess()
 CProcess::CProcess(CCodeBase i_codeBase, uint64_t i_memoryRequired, uint64_t i_deadline)
 {
 	m_isRunning = false;
-	m_startTime = 0;
 	m_id = CMasterSingleton::GetInstance()->GetNewProcessId();
 	m_codeBase = i_codeBase;
 	m_memoryRequired = i_memoryRequired;
@@ -25,6 +24,10 @@ CProcess::CProcess(CCodeBase i_codeBase, uint64_t i_memoryRequired, uint64_t i_d
 
 CProcess::CProcess(std::string i_configFilePath)
 {
+	m_isRunning = false;
+	m_lastDeadlineTick = 0;
+	m_started = false;
+
 	m_id = CMasterSingleton::GetInstance()->GetNewProcessId();
 	std::ifstream input_file(i_configFilePath);
 	std::string line;
@@ -61,7 +64,7 @@ CProcess::CProcess(std::string i_configFilePath)
 			}
 			if (stringVector[0] == "starttime")
 			{
-				m_startTime = std::stoi(stringVector[1]);
+				m_wakeUpTime = std::stoi(stringVector[1]);
 				startTimeSet = true;
 			}
 			if (stringVector[0] == "codebase")
@@ -91,8 +94,30 @@ CProcess::CProcess(std::string i_configFilePath)
 	this->Validate();
 }
 
+CProcess::CProcess(CProcess* i_process)
+{
+	m_id = i_process->m_id;
+	m_isRunning = i_process->m_isRunning;
+	m_memoryRequired = i_process->m_memoryRequired;
+	m_codeBase = i_process->m_codeBase;
+	m_programPointer = i_process->m_programPointer;
+	m_deadline = i_process->m_deadline;
+	m_startTime = i_process->m_startTime;
+	m_started = i_process->m_started;
+	m_lastDeadlineTick = i_process->m_lastDeadlineTick;
+	m_wakeUpTime = i_process->m_wakeUpTime;
+
+	//std::vector<CMemPage*> m_processPageVector;
+}
+
 CProcess::~CProcess()
 {
+	for (uint32_t i = 0; i < m_processPageVector.size(); ++i)
+	{
+		if (m_processPageVector[i])
+			delete m_processPageVector[i];
+	}
+	m_processPageVector.clear();
 }
 
 uint32_t CProcess::GetId()
@@ -103,6 +128,11 @@ uint32_t CProcess::GetId()
 bool CProcess::IsRunning()
 {
 	return m_isRunning;
+}
+
+void CProcess::SetRunState(bool i_isRunning)
+{
+	m_isRunning = i_isRunning;
 }
 
 uint64_t CProcess::GetMemoryRequired()
@@ -125,7 +155,7 @@ uint64_t CProcess::GetDeadline()
 	return m_deadline;
 }
 
-uint64_t CProcess::GetLastDeadlineTick()
+double CProcess::GetLastDeadlineTick()
 {
 	return m_lastDeadlineTick;
 }
@@ -177,7 +207,7 @@ void CProcess::IncrementProgramPointer()
 		m_programPointer = 0;
 }
 
-bool CProcess::IsNextCommandMemAccess()
+bool CProcess::IsCurrentCommandMemAccess()
 {
 	return m_codeBase.IsCommandMemAccess(m_programPointer);
 }
@@ -185,9 +215,33 @@ bool CProcess::IsNextCommandMemAccess()
 void CProcess::MarkPageAsDirty(uint64_t i_pageSize)
 {
 	uint64_t addressIndex = m_codeBase.GetAddressIndex(m_programPointer);
-	int pageNumber = floor(1.0 * addressIndex / i_pageSize);
-	assert(pageNumber < m_processPageVector.size() - 1);
+	uint32_t pageNumber = floor(1.0 * addressIndex / i_pageSize);
+	assert(pageNumber < m_processPageVector.size());
 	m_processPageVector.at(pageNumber)->MakePageDirty();
+}
+
+void CProcess::SetLastDeadlineTick(double i_lastDeadlineTick)
+{
+	m_lastDeadlineTick = i_lastDeadlineTick;
+}
+
+void CProcess::SetWakeUpTime(double i_wakeUpTime)
+{
+	m_wakeUpTime = i_wakeUpTime;
+}
+
+double CProcess::GetWakeUpTime()
+{
+	return m_wakeUpTime;
+}
+
+void CProcess::LinkToPages(std::vector<CMemPage*> i_memPageVector)
+{
+	for (uint32_t i = 0; i < i_memPageVector.size(); ++i)
+	{
+		if (i_memPageVector[i]->GetOwnerId() == m_id)
+			m_processPageVector.push_back(i_memPageVector[i]);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////

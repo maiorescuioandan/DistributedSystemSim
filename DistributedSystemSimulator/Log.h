@@ -11,6 +11,7 @@ class CLog
 public:
 	CLog();
 	~CLog();
+	CLog(CLog* i_log);
 	CLog(std::string i_logName, bool i_includeTimestamp = false);
 
 	void Write(std::string i_string);

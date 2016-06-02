@@ -46,3 +46,29 @@ void CMasterSingleton::MainLog(std::string i_string)
 {
 	m_log.Write(i_string);
 }
+
+void CMasterSingleton::AddNode(CNode* i_node)
+{
+	m_mainNodeVector.push_back(i_node);
+}
+
+CNode* CMasterSingleton::GetNode(uint32_t i_nodeIndex)
+{
+	// we need to make sure we call this with an actual node index
+	assert(i_nodeIndex < m_mainNodeVector.size());
+	return m_mainNodeVector[i_nodeIndex];
+}
+
+void CMasterSingleton::CreateNodeBackup()
+{
+	m_backupNodeVector.clear();
+	for (std::vector<CNode*>::iterator it = m_mainNodeVector.begin(); it != m_mainNodeVector.end(); ++it) {
+		CNode object = *it;
+		m_backupNodeVector.push_back(new CNode(&object));
+	}
+}
+
+void CMasterSingleton::RevertNodeFromBackup()
+{
+
+}

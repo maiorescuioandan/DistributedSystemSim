@@ -14,6 +14,7 @@ public:
 	~CNode();
 	CNode(uint64_t i_memorySize, uint64_t i_pageSize, double i_frequency);
 	CNode(std::string i_configFilePath);
+	CNode(CNode* i_node);
 	bool MemAlloc(CProcess* process);
 	bool AddProcess(CProcess* process);
 	bool RemoveProcess(uint32_t i_processId);
@@ -29,6 +30,7 @@ public:
 	void SetRunningProcess(uint32_t i_processIndex);
 	uint32_t GetProcessCount();
 	CProcess* GetProcess(uint32_t i_processIndex);
+	void Init();
 	// the stream must be public since it is not copyable
 	std::stringstream m_tempStringStream;
 private:

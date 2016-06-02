@@ -13,6 +13,14 @@ CMemPage::CMemPage(uint32_t i_pageId)
 	m_pageId = i_pageId;
 }
 
+CMemPage::CMemPage(CMemPage* i_memPage)
+{
+	m_clean = i_memPage->m_clean;
+	m_owned = i_memPage->m_owned;
+	m_pageId = i_memPage->m_pageId;
+	m_ownerProcessId = i_memPage->m_ownerProcessId;
+}
+
 CMemPage::~CMemPage()
 {
 

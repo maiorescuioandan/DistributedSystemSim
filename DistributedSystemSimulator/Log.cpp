@@ -41,6 +41,11 @@ CLog::CLog(std::string i_logName, bool i_includeTimestamp /*= false*/)
 	logging::core::get()->add_sink(sink);
 }
 
+CLog::CLog(CLog* i_log)
+{
+	m_logName = i_log->m_logName;
+}
+
 
 CLog::~CLog()
 {
