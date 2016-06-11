@@ -5,7 +5,7 @@
 // Command Class implementation below
 //////////////////////////////////////////////////////////////////////////
 
-CCommand::CCommand(bool i_memoryAccess, uint64_t i_cmdCount /*= 1*/, uint64_t i_startAddr /*= 0*/)
+CCommand::CCommand(bool i_memoryAccess, uint32_t i_cmdCount /*= 1*/, uint32_t i_startAddr /*= 0*/)
 {
 	m_memoryAccess = i_memoryAccess;
 	m_startAddr = i_startAddr;
@@ -17,19 +17,19 @@ bool CCommand::IsMemoryAccess()
 	return m_memoryAccess;
 }
 
-uint64_t CCommand::GetStartAddr()
+uint32_t CCommand::GetStartAddr()
 {
 	return m_startAddr;
 }
 
-uint64_t CCommand::GetCmdCount()
+uint32_t CCommand::GetCmdCount()
 {
 	return m_cmdCount;
 }
 
-uint64_t CCommand::GetMaxAddr()
+uint32_t CCommand::GetMaxAddr()
 {
-	uint64_t rValue;
+	uint32_t rValue;
 	if (m_memoryAccess)
 	{
 		rValue =  m_startAddr + m_cmdCount - 1;

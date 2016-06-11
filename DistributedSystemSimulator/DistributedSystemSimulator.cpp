@@ -23,11 +23,11 @@ void run_2_nodes();
 void test_file_config_node_with_singleton();
 void run_1_node();
 void test_mem_leak();
+void basic_testcase_1();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	run_2_nodes();
-	_CrtDumpMemoryLeaks();
+	basic_testcase_1();
 	return 0;
 }
 
@@ -40,25 +40,36 @@ void test_mem_leak()
 
 }
 
+void basic_testcase_1()
+{
+	// In this testcase, we can see a machine with high CPU usage migrating a process to another machine
+	CNode *node1 = new CNode("Config/Node1Real.txt");
+	CNode *node2 = new CNode("Config/Node2Real.txt");
+
+	node1->AddProcess(new CProcess("Config/Process6.txt"));
+	node1->AddProcess(new CProcess("Config/Process6.txt"));
+
+	CMasterSingleton::GetInstance()->AddNode(node1);
+	CMasterSingleton::GetInstance()->AddNode(node2);
+	CMasterSingleton::GetInstance()->SetStatusReportCycle(40);
+	CMasterSingleton::GetInstance()->SetEnableMigration(true);
+	CMasterSingleton::GetInstance()->RunToTime(400);
+}
+
 void run_2_nodes()
 {
-	CNode node1("Config/Node1Real.txt");
-	CNode node2("Config/Node2Real.txt");
+	CNode *node1 = new CNode("Config/Node1Real.txt");
+	CNode *node2 = new CNode("Config/Node2Real.txt");
 
-	node1.AddProcess(new CProcess("Config/Process1.txt"));
-	node1.AddProcess(new CProcess("Config/Process2.txt"));
-	node2.AddProcess(new CProcess("Config/Process1.txt"));
-	CNode node3(&node2);
-	bool o_deadline;
-	node1.RunToTime(500, o_deadline);
-	node2.RunToTime(500, o_deadline);
-	node1.PushRun();
-	node2.PushRun();
-	for (int i = 0; i < 150000000; ++i)
-	{
-		CNode node4(&node2);
-	}
-	_CrtDumpMemoryLeaks();
+	node1->AddProcess(new CProcess("Config/Process1.txt"));
+	node1->AddProcess(new CProcess("Config/Process2.txt"));
+	node2->AddProcess(new CProcess("Config/Process3.txt"));
+
+	CMasterSingleton::GetInstance()->AddNode(node1);
+	CMasterSingleton::GetInstance()->AddNode(node2);
+	CMasterSingleton::GetInstance()->SetStatusReportCycle(200);
+	CMasterSingleton::GetInstance()->SetEnableMigration(false);
+	CMasterSingleton::GetInstance()->RunToTime(400);
 }
 
 void run_1_node()

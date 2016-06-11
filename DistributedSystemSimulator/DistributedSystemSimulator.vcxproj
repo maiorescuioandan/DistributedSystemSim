@@ -88,6 +88,7 @@
     <ClInclude Include="Command.h" />
     <ClInclude Include="Log.h" />
     <ClInclude Include="MasterSingleton.h" />
+    <ClInclude Include="MigrationInfo.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="MemPage.h" />
     <ClInclude Include="Node.h" />
@@ -104,6 +105,7 @@
     <ClCompile Include="Log.cpp" />
     <ClCompile Include="MasterSingleton.cpp" />
     <ClCompile Include="MemPage.cpp" />
+    <ClCompile Include="MigrationInfo.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Process.cpp" />
     <ClCompile Include="Utils.cpp" />

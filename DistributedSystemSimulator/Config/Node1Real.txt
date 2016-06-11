@@ -3,3 +3,4 @@ memorySize 1000
 pageSize 10
 frequency 2.2
 algorithm RR
+bandwidth 10

@@ -18,13 +18,23 @@ public:
 	CNode* GetNode(uint32_t i_nodeIndex);
 	void CreateNodeBackup();
 	void RevertNodeFromBackup();
+	void RunToTime(double i_time);
+	void SetStatusReportCycle(uint32_t i_statusReportCycle);
+	void SetEnableMigration(bool i_enableMigration);
+	bool IsMigrationEnabled();
+	uint32_t GetNodeCount();
 private:
+	uint32_t GetCurrentStatusReportCycle();
+	void IncrementStatusReportCycle();
 	static void CreateLogFile();
 
 	static CLog m_log;
+	bool		m_enableMigration;
 	uint32_t	m_processId;
 	uint32_t	m_nodeId;
 	std::vector<CNode*> m_mainNodeVector;
-	std::vector<CNode*> m_backupNodeVector;
+	uint32_t m_statusReportCycle;
+	uint32_t m_currentStatusReportCycle;
+	//std::vector<CNode*> m_backupNodeVector;
 };
 

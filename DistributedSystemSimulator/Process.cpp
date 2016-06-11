@@ -9,25 +9,28 @@
 CProcess::CProcess()
 {
 	m_isRunning = false;
+	m_sleep = false;
 }
 
-CProcess::CProcess(CCodeBase i_codeBase, uint64_t i_memoryRequired, uint64_t i_deadline)
+CProcess::CProcess(CCodeBase i_codeBase, uint32_t i_memoryRequired, uint32_t i_deadline)
 {
 	m_isRunning = false;
 	m_id = CMasterSingleton::GetInstance()->GetNewProcessId();
 	m_codeBase = i_codeBase;
 	m_memoryRequired = i_memoryRequired;
 	m_deadline = i_deadline;
-	
+	m_markedDeadlineMissed = false;
+	m_sleep = false;
 	this->Validate();
 }
 
 CProcess::CProcess(std::string i_configFilePath)
 {
+	m_sleep = false;
 	m_isRunning = false;
 	m_lastDeadlineTick = 0;
 	m_started = false;
-
+	m_markedDeadlineMissed = false;
 	m_id = CMasterSingleton::GetInstance()->GetNewProcessId();
 	std::ifstream input_file(i_configFilePath);
 	std::string line;
@@ -106,7 +109,7 @@ CProcess::CProcess(CProcess* i_process)
 	m_started = i_process->m_started;
 	m_lastDeadlineTick = i_process->m_lastDeadlineTick;
 	m_wakeUpTime = i_process->m_wakeUpTime;
-
+	m_markedDeadlineMissed = i_process->m_markedDeadlineMissed;
 	//std::vector<CMemPage*> m_processPageVector;
 }
 
@@ -135,7 +138,7 @@ void CProcess::SetRunState(bool i_isRunning)
 	m_isRunning = i_isRunning;
 }
 
-uint64_t CProcess::GetMemoryRequired()
+uint32_t CProcess::GetMemoryRequired()
 {
 	return m_memoryRequired;
 }
@@ -150,7 +153,7 @@ uint16_t CProcess::GetProgramPointer()
 	return m_programPointer;
 }
 
-uint64_t CProcess::GetDeadline()
+uint32_t CProcess::GetDeadline()
 {
 	return m_deadline;
 }
@@ -212,9 +215,9 @@ bool CProcess::IsCurrentCommandMemAccess()
 	return m_codeBase.IsCommandMemAccess(m_programPointer);
 }
 
-void CProcess::MarkPageAsDirty(uint64_t i_pageSize)
+void CProcess::MarkPageAsDirty(uint32_t i_pageSize)
 {
-	uint64_t addressIndex = m_codeBase.GetAddressIndex(m_programPointer);
+	uint32_t addressIndex = m_codeBase.GetAddressIndex(m_programPointer);
 	uint32_t pageNumber = floor(1.0 * addressIndex / i_pageSize);
 	assert(pageNumber < m_processPageVector.size());
 	m_processPageVector.at(pageNumber)->MakePageDirty();
@@ -242,6 +245,48 @@ void CProcess::LinkToPages(std::vector<CMemPage*> i_memPageVector)
 		if (i_memPageVector[i]->GetOwnerId() == m_id)
 			m_processPageVector.push_back(i_memPageVector[i]);
 	}
+}
+
+uint32_t CProcess::GetMemPageCount(bool i_countOnlyDirty /*= false*/)
+{
+	// After the first migration cycle, we only want to count the dirty pages
+	uint32_t result = m_processPageVector.size();
+	if (i_countOnlyDirty)
+	{
+		result = 0;
+		for (uint32_t i = 0; i < m_processPageVector.size(); ++i)
+			if (!m_processPageVector[i]->IsClean())
+				++result;
+	}
+	return result;
+}
+
+void CProcess::CleanMemory()
+{
+	for (uint32_t i = 0; i < m_processPageVector.size(); ++i)
+	{
+		m_processPageVector[i]->MakePageClean();
+	}
+}
+
+void CProcess::SetMarkedDeadlineMissed(bool i_markedDeadlineMissed)
+{
+	m_markedDeadlineMissed = i_markedDeadlineMissed;
+}
+
+bool CProcess::GetMarkedDeadlineMissed()
+{
+	return m_markedDeadlineMissed;
+}
+
+void CProcess::SetSleep(bool i_sleep)
+{
+	m_sleep = i_sleep;
+}
+
+bool CProcess::IsSleeping()
+{
+	return m_sleep;
 }
 
 //////////////////////////////////////////////////////////////////////////

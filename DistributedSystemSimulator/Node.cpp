@@ -12,7 +12,7 @@ CNode::CNode()
 {
 }
 
-CNode::CNode(uint64_t i_memorySize, uint64_t i_pageSize, double i_frequency)
+CNode::CNode(uint32_t i_memorySize, uint32_t i_pageSize, double i_frequency)
 {
 	m_id = CMasterSingleton::GetInstance()->GetNewNodeId();
 	m_memorySize = i_memorySize;
@@ -23,7 +23,11 @@ CNode::CNode(uint64_t i_memorySize, uint64_t i_pageSize, double i_frequency)
 	m_timePerTick = 1.0 / i_frequency;
 	m_ticksDone = 0;
 	m_algorithm = NULL;
-
+	m_memUsage = 0;
+	m_cpuUsage = 0;
+	m_configuredBandwith = 0;
+	m_availableBandwith = 0;
+	m_isAlarmUp = false;
 	this->PostCreate();
 	this->CreateLog();
 }
@@ -32,13 +36,20 @@ CNode::CNode(std::string i_configFilePath)
 {
 	m_id = CMasterSingleton::GetInstance()->GetNewNodeId();
 	m_algorithm = NULL;
+	m_memUsage = 0;
+	m_cpuUsage = 0;
+	m_availableBandwith = 0;
+	m_isAlarmUp = false;
+
 	std::ifstream input_file(i_configFilePath);
 	std::string line;
 	uint32_t lineNumber = 0;
+
 	bool memorySet = false;
 	bool pageSizeSet = false;
 	bool frequencySet = false;
 	bool algorithmSet = false;
+	bool bandwidthSet = false;
 
 	while (std::getline(input_file, line))
 	{
@@ -53,6 +64,11 @@ CNode::CNode(std::string i_configFilePath)
 		if (stringVector.size() == 0)
 			continue;
 
+		if (stringVector[0] == "bandwidth")
+		{
+			m_configuredBandwith = std::stoi(stringVector[1]);
+			bandwidthSet = true;
+		}
 		if (stringVector[0] == "memorysize")
 		{
 			m_memorySize = std::stoi(stringVector[1]);
@@ -88,6 +104,8 @@ CNode::CNode(std::string i_configFilePath)
 		throw new CNodeException(CNodeException::kFrequencyNotSet);
 	if (!algorithmSet)
 		throw new CNodeException(CNodeException::kAlgorithmNotSet);
+	if (!bandwidthSet)
+		throw new CNodeException(CNodeException::kBandwidthNotSet);
 	m_timePerTick = 1.0 / m_frequency;
 	this->PostCreate();
 	this->CreateLog();
@@ -105,6 +123,11 @@ CNode::CNode(CNode* i_node)
 	m_currentTime = i_node->m_currentTime;
 	m_currentTimeTemp = i_node->m_currentTimeTemp;
 	m_timePerTick = i_node->m_timePerTick;
+	m_memUsage = i_node->m_memUsage;
+	m_cpuUsage = i_node->m_cpuUsage;
+	m_configuredBandwith = i_node->m_configuredBandwith;
+	m_availableBandwith = i_node->m_availableBandwith;
+	m_isAlarmUp = i_node->m_isAlarmUp;
 	if (m_algorithm)
 		delete m_algorithm;
 	m_algorithm = i_node->m_algorithm->Clone();
@@ -156,6 +179,8 @@ CNode::~CNode()
 			delete m_processVector[i];
 	}
 	m_processVector.clear();
+	if (m_migrationInfo)
+		delete m_migrationInfo;
 }
 
 bool CNode::MemAlloc(CProcess* i_process)
@@ -167,7 +192,7 @@ bool CNode::MemAlloc(CProcess* i_process)
 	while (reqPages > 0 && it != m_nodePageVector.end())
 	{
 		// If memory page is not owned, add it to the current process
-		if ((*it)->GetPageOwnership() == false)
+		if ((*it)->IsOwned() == false)
 		{ 
 			i_process->AddMemoryPage(*it);
 			--reqPages;
@@ -179,6 +204,34 @@ bool CNode::MemAlloc(CProcess* i_process)
 	if (reqPages > 0)
 	{
 		i_process->ClearMemory();
+		return false;
+	}
+	return true;
+}
+
+bool CNode::MemAlloc(uint32_t i_processId, uint32_t memoryRequired)
+{
+	// This is used when there is no process object (before the migration takes place)
+	uint32_t reqPages = uint32_t(ceil(1.0 * memoryRequired / m_pageSize));
+	std::vector<CMemPage*>::iterator it = m_nodePageVector.begin();
+	while (reqPages > 0 && it != m_nodePageVector.end())
+	{
+		// If memory page is not owned, add it to the current process
+		if ((*it)->IsOwned() == false)
+		{
+			(*it)->SetOwnerId(i_processId);
+			(*it)->MakePageClean();
+			(*it)->SetPageOwnership(true);
+			--reqPages;
+		}
+		++it;
+	}
+
+	// if we reached the end and reqPages is not 0, we must free the memory and return false, as MemAlloc failed
+	if (reqPages > 0)
+	{
+		for (uint32_t i = 0; i < m_nodePageVector.size(); ++i)
+			m_nodePageVector[i]->SetPageOwnership(false);
 		return false;
 	}
 	return true;
@@ -206,10 +259,29 @@ bool CNode::AddProcess(CProcess* process)
 	return rValue;
 }
 
+void CNode::AddProcessPostMigration(CProcess* i_process)
+{
+	// add the process to the destination node (this)
+	m_processVector.push_back(i_process);
+	// link the pages with the process (the pages are already owned by this process)
+	i_process->LinkToPages(m_nodePageVector);
+}
+
 bool CNode::RemoveProcess(uint32_t i_processId)
 {
 	bool rValue = false;
-	std::vector<CProcess*>::iterator it = m_processVector.begin();
+	for (uint32_t i = 0; i < m_processVector.size(); ++i)
+	{
+		if (m_processVector[i]->GetId() == i_processId)
+		{
+			m_processVector[i]->ClearMemory();
+			m_processVector.erase(m_processVector.begin() + i);
+			if (i < m_runningProcessIndex)
+				--m_runningProcessIndex;
+		}
+	}
+
+/*	std::vector<CProcess*>::iterator it = m_processVector.begin();
 	while (it != m_processVector.end() && (*it)->GetId() != i_processId)
 		++it;
 	if (it != m_processVector.end())
@@ -217,7 +289,7 @@ bool CNode::RemoveProcess(uint32_t i_processId)
 		(*it)->ClearMemory();
 		m_processVector.erase(it);
 		rValue = true;
-	}
+	}*/
 	return rValue;
 }
 
@@ -227,6 +299,22 @@ void CNode::Tick(bool o_deadline)
 	++m_ticksDone;
 	m_algorithm->Run(this);
 	m_currentTimeTemp += m_timePerTick;
+	// Check if we have a migration going on and if it's time to take action
+	if (m_isAlarmUp && m_migrationInfo && m_currentTimeTemp > m_migrationInfo->GetAlarmTime())
+	{
+		switch (m_migrationInfo->GetState())
+		{
+		case CMigrationInfo::kStateScheduled:
+			m_migrationInfo->StopProcessOnSource();
+			break;
+		case CMigrationInfo::kStateInitialCopyDone:
+			m_migrationInfo->CompleteMigration();
+			delete m_migrationInfo;
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 // Run execution for a limited amount of time
@@ -253,8 +341,8 @@ void CNode::PushRun()
 	if (m_currentTime == m_currentTimeTemp)
 		throw new CNodeException(CNodeException::kCannotPushNothing);
 	m_currentTime = m_currentTimeTemp;
-	m_log.Write(m_tempStringStream.str());
-	m_tempStringStream.str(std::string());
+	//m_log.Write(m_tempStringStream.str());
+	//m_tempStringStream.str(std::string());
 }
 
 double CNode::GetTime()
@@ -264,6 +352,7 @@ double CNode::GetTime()
 
 void CNode::PostCreate()
 {
+	m_availableBandwith = m_configuredBandwith;
 	m_tempStringStream.precision(2);
 	m_tempStringStream.setf(std::ios::fixed, std::ios::floatfield);
 
@@ -306,7 +395,7 @@ double CNode::GetCurrentTimeTemp()
 	return m_currentTimeTemp;
 }
 
-uint64_t CNode::GetPageSize()
+uint32_t CNode::GetPageSize()
 {
 	return m_pageSize;
 }
@@ -329,6 +418,91 @@ CProcess* CNode::GetProcess(uint32_t i_processIndex)
 void CNode::Init()
 {
 	m_algorithm->SetInitialProcess(this);
+	ResetTicks();
+}
+
+void CNode::IncrementNopTicks()
+{
+	++m_nopTicks;
+}
+
+void CNode::IncrementProcTicks()
+{
+	++m_procTicks;
+}
+
+void CNode::ResetTicks()
+{
+	m_nopTicks = 0;
+	m_procTicks = 0;
+}
+
+void CNode::ReportStatus()
+{
+	// Calculate CPU usage first
+	// should avoid dividing by 1
+	assert((m_nopTicks + m_procTicks) != 0);
+	double cpuUsage = 1.0 * m_procTicks / (m_nopTicks + m_procTicks);
+	ResetTicks();
+
+	// Calculate MEM usage
+	int usedPages = 0;
+	for (uint32_t i = 0; i < m_nodePageVector.size(); ++i)
+	{
+		if (m_nodePageVector[i]->IsOwned())
+			++usedPages;
+	}
+	double memUsage = 1.0 * usedPages / m_nodePageVector.size();
+
+	WriteLog(boost::str(boost::format("STATUS: CPU usage: %f \tMEMORY usage: %f") % cpuUsage % memUsage ));
+	m_memUsage = memUsage;
+	m_cpuUsage = cpuUsage;
+}
+
+double CNode::GetMemUsage()
+{
+	return m_memUsage;
+}
+
+double CNode::GetCpuUsage()
+{
+	return m_cpuUsage;
+}
+
+uint32_t CNode::GetAvailableBandwidth()
+{
+	return m_availableBandwith;
+}
+
+void CNode::SetAvailableBandwidth(uint32_t i_newBandwidth)
+{
+	m_availableBandwith = i_newBandwidth;
+	assert(m_availableBandwith <= m_configuredBandwith);
+}
+
+uint32_t CNode::GetId()
+{
+	return m_id;
+}
+
+void CNode::SetAlarm(bool i_isAlarmUp)
+{
+	m_isAlarmUp = i_isAlarmUp;
+}
+
+bool CNode::IsAlarmUp()
+{
+	return m_isAlarmUp;
+}
+
+void CNode::SetMigrationInfo(CMigrationInfo* i_migrationInfo)
+{
+	m_migrationInfo = i_migrationInfo;
+}
+
+CAlgorithmBase* CNode::GetProcessorAlgorithm()
+{
+	return m_algorithm;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -344,3 +518,35 @@ CNodeException::NodeExceptionEnum CNodeException::GetExceptionInfo()
 {
 	return m_info;
 }
+
+/*
+Node object adds:
+bandwith - configurable from file
+availableBandwith - based on current happening migrations
+list of MIgrationObjectInfo
+alarmTime - set on adding a new object to the list of migration object info and on completing an object from list of migrationobjectinfo
+isAlarmUp - used in an "if" in tick to save time that would be spent searching to the migration object list
+
+Process object adds:
+isInMIgration bool - to ignore deadlines if it is already in a migration
+
+
+the migrationinfoobject
+pointer to source node
+pointer to destination node
+migration itime (memPage*memPageSize/minBW)
+
+what it does
+on ScheduleMigration:
+calculates migration time
+cleans all mem pages from src process
+reserve the mem pages on destination node
+
+then in the tick method in the node, it will check for the alarm
+when the alarm is hit, tthe migration helper object calculates the time left
+to move the remaining mem pages to the other node (the dirty ones), but halts 
+the process and moves it to the destination node, setting as a wake up time
+the time calculated here. Also, it cleans of ownership the mem pages from the src node
+And frees the nodes bandwith so they can migrate some more
+Also, it must remove the "ignore deadline" from the migrated process when this is done.\
+*/

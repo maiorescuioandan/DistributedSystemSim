@@ -4,19 +4,23 @@
 #include "MemPage.h"
 #include "Log.h"
 #include "AlgorithmBase.h"
+#include "MigrationInfo.h"
 
 class CAlgorithmBase;
+class CMigrationInfo;
 
 class CNode
 {
 public:
 	CNode();
 	~CNode();
-	CNode(uint64_t i_memorySize, uint64_t i_pageSize, double i_frequency);
+	CNode(uint32_t i_memorySize, uint32_t i_pageSize, double i_frequency);
 	CNode(std::string i_configFilePath);
 	CNode(CNode* i_node);
 	bool MemAlloc(CProcess* process);
+	bool MemAlloc(uint32_t i_processId, uint32_t memoryRequired);
 	bool AddProcess(CProcess* process);
+	void AddProcessPostMigration(CProcess* i_process);
 	bool RemoveProcess(uint32_t i_processId);
 	void RunToTime(double i_time, bool &o_deadline);
 	void PushRun();
@@ -25,7 +29,7 @@ public:
 	// Getters / setters
 	double GetTime();
 	double GetCurrentTimeTemp();
-	uint64_t GetPageSize();
+	uint32_t GetPageSize();
 	uint32_t GetRunningProcessIndex();
 	void SetRunningProcess(uint32_t i_processIndex);
 	uint32_t GetProcessCount();
@@ -33,17 +37,30 @@ public:
 	void Init();
 	// the stream must be public since it is not copyable
 	std::stringstream m_tempStringStream;
+	void Tick(bool o_deadline);
+	void IncrementNopTicks();
+	void IncrementProcTicks();
+	void ResetTicks();
+	void ReportStatus();
+	double GetMemUsage();
+	double GetCpuUsage();
+	uint32_t GetAvailableBandwidth();
+	void SetAvailableBandwidth(uint32_t i_newBandwidth);
+	uint32_t GetId();
+	void SetAlarm(bool i_isAlarmUp);
+	bool IsAlarmUp();
+	void SetMigrationInfo(CMigrationInfo* i_migrationInfo);
+	CAlgorithmBase*  GetProcessorAlgorithm();
 private:
 	// Methods
-	void Tick(bool o_deadline);
 	void PostCreate();
 	void CreateLog();
 	
 	uint32_t m_runningProcessIndex;
 	uint32_t m_id;
 	// Configuration 
-	uint64_t m_memorySize;
-	uint64_t m_pageSize;
+	uint32_t m_memorySize;
+	uint32_t m_pageSize;
 	double	 m_frequency;
 	std::vector<CMemPage*> m_nodePageVector;
 	//CAlgorithm
@@ -51,14 +68,27 @@ private:
 	// Time
 	
 	//counts how many ticks have been done since the program processor is running
-	uint64_t	m_ticksDone;
+	uint32_t	m_ticksDone;
 	double		m_currentTime;
 	double		m_currentTimeTemp;
 	double		m_timePerTick;
 	
+	uint32_t	m_nopTicks;
+	uint32_t	m_procTicks;
+
+	double		m_cpuUsage;
+	double		m_memUsage;
+
+	uint32_t	m_configuredBandwith;
+	uint32_t	m_availableBandwith;
+
+	double		m_alarmTime;
+	bool		m_isAlarmUp;
+
 	CLog		m_log;
 
 	std::vector<CProcess*> m_processVector;
+	CMigrationInfo* m_migrationInfo;
 };
 
 // will define exception for each class in its file.
@@ -71,7 +101,8 @@ public:
 		kPageSizeNotSet = 2,
 		kMemorySizeNotSet = 3,
 		kFrequencyNotSet = 4,
-		kAlgorithmNotSet = 5
+		kAlgorithmNotSet = 5,
+		kBandwidthNotSet = 6
 	};
 
 	CNodeException(NodeExceptionEnum i_info);

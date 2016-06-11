@@ -8,6 +8,8 @@ CMasterSingleton::CMasterSingleton()
 {
 	m_processId = 0;
 	m_nodeId = 0;
+	m_statusReportCycle = 0;
+	m_currentStatusReportCycle = 0;
 }
 
 CMasterSingleton::~CMasterSingleton()
@@ -49,6 +51,7 @@ void CMasterSingleton::MainLog(std::string i_string)
 
 void CMasterSingleton::AddNode(CNode* i_node)
 {
+	i_node->Init();
 	m_mainNodeVector.push_back(i_node);
 }
 
@@ -61,14 +64,80 @@ CNode* CMasterSingleton::GetNode(uint32_t i_nodeIndex)
 
 void CMasterSingleton::CreateNodeBackup()
 {
-	m_backupNodeVector.clear();
-	for (std::vector<CNode*>::iterator it = m_mainNodeVector.begin(); it != m_mainNodeVector.end(); ++it) {
-		CNode object = *it;
-		m_backupNodeVector.push_back(new CNode(&object));
-	}
+	//m_backupNodeVector.clear();
+	//for (std::vector<CNode*>::iterator it = m_mainNodeVector.begin(); it != m_mainNodeVector.end(); ++it) {
+	//	CNode object = *it;
+	//	m_backupNodeVector.push_back(new CNode(&object));
+	//}
 }
 
 void CMasterSingleton::RevertNodeFromBackup()
 {
 
+}
+
+void CMasterSingleton::RunToTime(double i_time)
+{
+	while (1)	
+	{
+		double minTime = m_mainNodeVector[0]->GetTime();
+		int index = 0;
+		for (uint32_t i = 1; i < m_mainNodeVector.size(); ++i)
+		{
+			if (m_mainNodeVector[i]->GetTime() < minTime)
+			{
+				index = i;
+				minTime = m_mainNodeVector[i]->GetTime();
+			}
+		}
+		if (minTime > i_time)
+			return;
+		bool o_deadline = false;
+
+		if (minTime > GetCurrentStatusReportCycle())
+		{
+			// Report to log here
+			for (uint32_t i = 0; i < m_mainNodeVector.size(); ++i)
+			{
+				m_mainNodeVector[i]->ReportStatus();
+			}
+			IncrementStatusReportCycle();
+		}
+
+		m_mainNodeVector[index]->Tick(o_deadline);
+		m_mainNodeVector[index]->PushRun();
+	}
+}
+
+void CMasterSingleton::SetStatusReportCycle(uint32_t i_statusReportCycle)
+{
+	// we're setting both as  we want to run the first check after the first cycle, not before
+	m_statusReportCycle = i_statusReportCycle;
+	m_currentStatusReportCycle = i_statusReportCycle;
+}
+
+uint32_t CMasterSingleton::GetCurrentStatusReportCycle()
+{
+	return m_currentStatusReportCycle;
+}
+
+// we report the mem usage and cpu usage in the log once every m_statusReportCycle time units;
+void CMasterSingleton::IncrementStatusReportCycle()
+{
+	m_currentStatusReportCycle += m_statusReportCycle;
+}
+
+void CMasterSingleton::SetEnableMigration(bool i_enableMigration)
+{
+	m_enableMigration = i_enableMigration;
+}
+
+bool CMasterSingleton::IsMigrationEnabled()
+{
+	return m_enableMigration;
+}
+
+uint32_t CMasterSingleton::GetNodeCount()
+{
+	return m_mainNodeVector.size();
 }

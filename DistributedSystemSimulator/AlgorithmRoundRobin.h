@@ -11,6 +11,7 @@ public:
 	virtual ~CAlgorithmRoundRobin();
 	virtual void Run(CNode *io_node);
 	virtual void SetInitialProcess(CNode *io_node);
+	virtual void GetNextRunningProcess(CNode *io_node);
 	virtual CAlgorithmRoundRobin* Clone();
 	bool CheckIfProcessCanRun(CNode *i_node, CProcess *i_process);
 private:

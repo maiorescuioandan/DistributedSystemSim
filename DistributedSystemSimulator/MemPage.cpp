@@ -31,7 +31,7 @@ void CMemPage::SetPageOwnership(bool i_owned)
 	m_owned = i_owned;
 }
 
-bool CMemPage::GetPageOwnership()
+bool CMemPage::IsOwned()
 {
 	return m_owned;
 }

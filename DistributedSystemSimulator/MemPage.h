@@ -7,7 +7,7 @@ public:
 	CMemPage(CMemPage* i_memPage);
 	~CMemPage();
 	void SetPageOwnership(bool i_owned);
-	bool GetPageOwnership();
+	bool IsOwned();
 	void SetOwnerId(uint32_t i_ownerId);
 	uint32_t GetOwnerId();
 	uint32_t GetPageId();

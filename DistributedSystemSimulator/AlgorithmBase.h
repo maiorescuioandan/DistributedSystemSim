@@ -10,6 +10,7 @@ public:
 	virtual ~CAlgorithmBase();
 	virtual void Run(CNode *io_node) = 0;
 	virtual void SetInitialProcess(CNode *io_node) = 0;
+	virtual void GetNextRunningProcess(CNode *io_node) = 0;
 	virtual CAlgorithmBase* Clone() = 0;
 };
 
