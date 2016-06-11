@@ -42,8 +42,10 @@ public:
 	void IncrementProcTicks();
 	void ResetTicks();
 	void ReportStatus();
+	uint32_t GetMemSize();
 	double GetMemUsage();
 	double GetCpuUsage();
+	double GetFreeMem();
 	uint32_t GetAvailableBandwidth();
 	void SetAvailableBandwidth(uint32_t i_newBandwidth);
 	uint32_t GetId();
@@ -77,7 +79,6 @@ private:
 	uint32_t	m_procTicks;
 
 	double		m_cpuUsage;
-	double		m_memUsage;
 
 	uint32_t	m_configuredBandwith;
 	uint32_t	m_availableBandwith;

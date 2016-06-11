@@ -1,6 +1,6 @@
 Process
-requiredMemory 300
-deadline 45
+requiredMemory 500
+deadline 200
 startTime 0
 CodeBase
 1 80 0

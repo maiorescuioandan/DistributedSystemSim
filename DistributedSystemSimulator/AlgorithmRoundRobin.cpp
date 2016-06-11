@@ -75,11 +75,18 @@ void CAlgorithmRoundRobin::Run(CNode *io_node)
 				// Schedule the migration here
 				CMigrationInfo* pMigrationInfo = new CMigrationInfo();
 				// decide which one is the destination node by getting the one with the free-est processor
-				CNode* destinationNode = pMigrationInfo->FindNodeWithFreeCpu(io_node);
+				CNode* destinationNode = pMigrationInfo->FindNodeWithFreeCpu(io_node, pProcess);
 				if (destinationNode)
+				{
 					if (!pMigrationInfo->ScheduleMigration(io_node, destinationNode, pProcess))
 						// delete the object if the schedule failed to avoid memory leaks
 						delete pMigrationInfo;
+				}
+				else
+				{
+					io_node->WriteLog("Failed to find destination node for migration!");
+				}
+				
 			}
 		}
 	}

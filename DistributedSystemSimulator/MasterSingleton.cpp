@@ -8,8 +8,9 @@ CMasterSingleton::CMasterSingleton()
 {
 	m_processId = 0;
 	m_nodeId = 0;
-	m_statusReportCycle = 0;
+	m_statusReportCycle = 100;
 	m_currentStatusReportCycle = 0;
+	m_memoryMigrationTreshold = 1;
 }
 
 CMasterSingleton::~CMasterSingleton()
@@ -102,6 +103,26 @@ void CMasterSingleton::RunToTime(double i_time)
 				m_mainNodeVector[i]->ReportStatus();
 			}
 			IncrementStatusReportCycle();
+
+			if (IsMigrationEnabled())
+			{
+				for (uint32_t i = 0; i < m_mainNodeVector.size(); ++i)
+				{
+					if (m_mainNodeVector[i]->GetMemUsage() > m_memoryMigrationTreshold && !m_mainNodeVector[i]->IsAlarmUp())
+					{
+						// 	we should migrate something from this node to another node
+						CMigrationInfo* migrationInfo = new CMigrationInfo();
+						CNode* destinationNode = migrationInfo->FindNodeWithFreeMem(m_mainNodeVector[i], NULL);
+						if (!destinationNode)
+							continue;
+						CProcess* process = migrationInfo->FindProcessToMigrateOnMemOverflow(m_mainNodeVector[i], destinationNode);
+						if (!process)
+							continue;
+						if (!migrationInfo->ScheduleMigration(m_mainNodeVector[i], destinationNode, process))
+							delete migrationInfo;
+					}
+				}
+			}
 		}
 
 		m_mainNodeVector[index]->Tick(o_deadline);
@@ -140,4 +161,14 @@ bool CMasterSingleton::IsMigrationEnabled()
 uint32_t CMasterSingleton::GetNodeCount()
 {
 	return m_mainNodeVector.size();
+}
+
+void CMasterSingleton::SetMemoryMigrationTreshold(double i_memoryMigrationTreshold)
+{
+	m_memoryMigrationTreshold = i_memoryMigrationTreshold;
+}
+
+double CMasterSingleton::GetMemoryMigrationTreshold()
+{
+	return m_memoryMigrationTreshold;
 }

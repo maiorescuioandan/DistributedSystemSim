@@ -23,7 +23,6 @@ CNode::CNode(uint32_t i_memorySize, uint32_t i_pageSize, double i_frequency)
 	m_timePerTick = 1.0 / i_frequency;
 	m_ticksDone = 0;
 	m_algorithm = NULL;
-	m_memUsage = 0;
 	m_cpuUsage = 0;
 	m_configuredBandwith = 0;
 	m_availableBandwith = 0;
@@ -36,7 +35,6 @@ CNode::CNode(std::string i_configFilePath)
 {
 	m_id = CMasterSingleton::GetInstance()->GetNewNodeId();
 	m_algorithm = NULL;
-	m_memUsage = 0;
 	m_cpuUsage = 0;
 	m_availableBandwith = 0;
 	m_isAlarmUp = false;
@@ -123,7 +121,6 @@ CNode::CNode(CNode* i_node)
 	m_currentTime = i_node->m_currentTime;
 	m_currentTimeTemp = i_node->m_currentTimeTemp;
 	m_timePerTick = i_node->m_timePerTick;
-	m_memUsage = i_node->m_memUsage;
 	m_cpuUsage = i_node->m_cpuUsage;
 	m_configuredBandwith = i_node->m_configuredBandwith;
 	m_availableBandwith = i_node->m_availableBandwith;
@@ -445,6 +442,12 @@ void CNode::ReportStatus()
 	double cpuUsage = 1.0 * m_procTicks / (m_nopTicks + m_procTicks);
 	ResetTicks();
 
+	WriteLog(boost::str(boost::format("STATUS: CPU usage: %f \tMEMORY usage: %f") % cpuUsage % GetMemUsage() ));
+	m_cpuUsage = cpuUsage;
+}
+
+double CNode::GetMemUsage()
+{
 	// Calculate MEM usage
 	int usedPages = 0;
 	for (uint32_t i = 0; i < m_nodePageVector.size(); ++i)
@@ -453,21 +456,20 @@ void CNode::ReportStatus()
 			++usedPages;
 	}
 	double memUsage = 1.0 * usedPages / m_nodePageVector.size();
-
-	WriteLog(boost::str(boost::format("STATUS: CPU usage: %f \tMEMORY usage: %f") % cpuUsage % memUsage ));
-	m_memUsage = memUsage;
-	m_cpuUsage = cpuUsage;
-}
-
-double CNode::GetMemUsage()
-{
-	return m_memUsage;
+	return memUsage;
 }
 
 double CNode::GetCpuUsage()
 {
 	return m_cpuUsage;
 }
+
+
+double CNode::GetFreeMem()
+{
+	return (1.0 - GetMemUsage()) * m_memorySize;
+}
+
 
 uint32_t CNode::GetAvailableBandwidth()
 {
@@ -503,6 +505,11 @@ void CNode::SetMigrationInfo(CMigrationInfo* i_migrationInfo)
 CAlgorithmBase* CNode::GetProcessorAlgorithm()
 {
 	return m_algorithm;
+}
+
+uint32_t CNode::GetMemSize()
+{
+	return m_memorySize;
 }
 
 //////////////////////////////////////////////////////////////////////////

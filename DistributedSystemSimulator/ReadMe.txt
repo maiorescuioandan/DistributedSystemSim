@@ -38,3 +38,7 @@ AppWizard uses "TODO:" comments to indicate parts of the source code you
 should add to or customize.
 
 /////////////////////////////////////////////////////////////////////////////
+
+TODO:
+File to configure system (general constants, nodes, processes etc)
+Migrate a process when it can't start on a node

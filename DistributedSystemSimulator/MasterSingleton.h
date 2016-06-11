@@ -23,18 +23,21 @@ public:
 	void SetEnableMigration(bool i_enableMigration);
 	bool IsMigrationEnabled();
 	uint32_t GetNodeCount();
+	void SetMemoryMigrationTreshold(double i_memoryMigrationTreshold);
+	double GetMemoryMigrationTreshold();
 private:
 	uint32_t GetCurrentStatusReportCycle();
 	void IncrementStatusReportCycle();
 	static void CreateLogFile();
 
-	static CLog m_log;
-	bool		m_enableMigration;
-	uint32_t	m_processId;
-	uint32_t	m_nodeId;
+	static CLog			m_log;
+	bool				m_enableMigration;
+	uint32_t			m_processId;
+	uint32_t			m_nodeId;
 	std::vector<CNode*> m_mainNodeVector;
-	uint32_t m_statusReportCycle;
-	uint32_t m_currentStatusReportCycle;
+	uint32_t			m_statusReportCycle;
+	uint32_t			m_currentStatusReportCycle;
+	double				m_memoryMigrationTreshold;
 	//std::vector<CNode*> m_backupNodeVector;
 };
 

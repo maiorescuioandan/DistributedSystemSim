@@ -52,27 +52,110 @@ bool CMigrationInfo::ScheduleMigration(CNode* i_sourceNode, CNode* i_destination
 	return true;
 }
 
-CNode* CMigrationInfo::FindNodeWithFreeCpu(CNode* i_sourceNode)
+CNode* CMigrationInfo::FindNodeWithFreeCpu(CNode* i_sourceNode, CProcess* i_process)
 {
+	i_sourceNode->WriteLog("MIGRATION - CPU ISSUES - Searching for destination node to establish migration");
 	CNode* returnValue = NULL;
 	bool found = false;
 	uint32_t minIndex = 0;
 	double minCpu = 1;
-	for (uint32_t i = 0; i < CMasterSingleton::GetInstance()->GetNodeCount(); ++i)
+	if (i_sourceNode->GetAvailableBandwidth() > 0)
 	{
-		double cpuUsage = CMasterSingleton::GetInstance()->GetNode(i)->GetCpuUsage();
-		if (minCpu > cpuUsage && i_sourceNode->GetId() != CMasterSingleton::GetInstance()->GetNode(i)->GetId())
-		{ 
-			minCpu = cpuUsage;
-			minIndex = i;
-			found = true;
+		for (uint32_t i = 0; i < CMasterSingleton::GetInstance()->GetNodeCount(); ++i)
+		{
+			CNode* currentNode = CMasterSingleton::GetInstance()->GetNode(i);
+			double cpuUsage = currentNode->GetCpuUsage();
+			if (minCpu > cpuUsage && i_sourceNode->GetId() != currentNode->GetId() && CanBeDestination(currentNode, i_process))
+			{
+				minCpu = cpuUsage;
+				minIndex = i;
+				found = true;
+			}
+		}
+
+		// if found is false, we will return a null pointer meaning that the migration should not happen
+		if (found)
+			returnValue = CMasterSingleton::GetInstance()->GetNode(minIndex);
+	}
+
+	return returnValue;
+}
+
+CNode* CMigrationInfo::FindNodeWithFreeMem(CNode* i_sourceNode, CProcess* i_process)
+{
+	i_sourceNode->WriteLog("MIGRATION - MEM ISSUES - Searching for destination node to establish migration");
+	CNode* returnValue = NULL;
+	bool found = false;
+	double maxFreeMem = 0;
+	uint32_t maxIndex = 0;
+	// find out which is the process with the greatest free mem that we can migrate to:
+	if (i_sourceNode->GetAvailableBandwidth() > 0)
+	{
+		for (uint32_t i = 0; i < CMasterSingleton::GetInstance()->GetNodeCount(); ++i)
+		{
+			CNode* currentNode = CMasterSingleton::GetInstance()->GetNode(i);
+			double freeMem = currentNode->GetFreeMem();
+			if (maxFreeMem < freeMem && i_sourceNode->GetId() != currentNode->GetId() && CanBeDestination(currentNode, i_process))
+			{
+				maxFreeMem = freeMem;
+				maxIndex = i;
+				found = true;
+			}
+		}
+
+		// if found is false, we will return a null pointer meaning that the migration should not happen
+		if (found)
+			returnValue = CMasterSingleton::GetInstance()->GetNode(maxIndex);
+	}
+
+	return returnValue;
+}
+
+CProcess* CMigrationInfo::FindProcessToMigrateOnMemOverflow(CNode* i_sourceNode, CNode* i_destinationNode)
+{
+	// trying to move the process that uses the highest amount of memory from the source node to the destination node
+	// that process must also have enough memory on the destination node so this node does not overflow
+	CProcess* returnValue = NULL;
+	double sourceNodeMemSize = i_sourceNode->GetMemSize();
+	double sourceNodeFreeMem = i_sourceNode->GetFreeMem();
+	double destNodeMemSize = i_destinationNode->GetMemSize();
+	double destNodeFreeMem = i_destinationNode->GetFreeMem();
+	double largestProcessMem = 0;
+	double destinationIndex = 0;
+	for (uint32_t i = 0; i < i_sourceNode->GetProcessCount(); ++i)
+	{
+		CProcess* currentProcess = i_sourceNode->GetProcess(i);
+		double processMemRequired = currentProcess->GetMemoryRequired();
+		if (processMemRequired > largestProcessMem)
+		{
+			if ( (1.0 * (sourceNodeMemSize - sourceNodeFreeMem - processMemRequired) / sourceNodeMemSize) < CMasterSingleton::GetInstance()->GetMemoryMigrationTreshold() &&
+				 (1.0 * (destNodeMemSize- destNodeFreeMem + processMemRequired) / destNodeMemSize) < CMasterSingleton::GetInstance()->GetMemoryMigrationTreshold())
+			{
+				largestProcessMem = processMemRequired;
+				returnValue = i_sourceNode->GetProcess(i);
+			}
 		}
 	}
-	
-	// if found is false, we will return a null pointer meaning that the migration should not happen
-	if (found)
-		returnValue = CMasterSingleton::GetInstance()->GetNode(minIndex);
+
 	return returnValue;
+}
+
+bool CMigrationInfo::CanBeDestination(CNode* i_destinationNode, CProcess* i_process)
+{
+	bool returnValue = true;
+	if (i_destinationNode->GetAvailableBandwidth() == 0)
+		returnValue = false;
+
+	// when there is a memory overflow migration, the i_process pointer is null
+	if (i_process)
+	{
+		double wouldBeMemory = 1.0 * (i_destinationNode->GetMemSize() - i_destinationNode->GetFreeMem() + i_process->GetMemoryRequired()) / i_destinationNode->GetMemSize();
+		// we must make sure that the would-be memory will not overflow the node and cause another migration
+		if (wouldBeMemory > CMasterSingleton::GetInstance()->GetMemoryMigrationTreshold())
+			returnValue = false;
+	}
+
+	return returnValue;	
 }
 
 CMigrationInfo::EnumMigrationState CMigrationInfo::GetState()
@@ -116,7 +199,6 @@ void CMigrationInfo::CompleteMigration()
 	m_sourceNode->SetAlarm(false);
 	// move the pointer to the process from the source node to the destination node
 	m_sourceNode->RemoveProcess(m_migratedProcess->GetId());
-
 	m_destinationNode->AddProcessPostMigration(m_migratedProcess);
 	// wake up the process
 	m_migratedProcess->SetWakeUpTime(m_destinationNode->GetCurrentTimeTemp());
@@ -124,4 +206,5 @@ void CMigrationInfo::CompleteMigration()
 	m_sourceNode->SetAvailableBandwidth(m_sourceNode->GetAvailableBandwidth() + m_bandwithUsed);
 	m_destinationNode->SetAvailableBandwidth(m_destinationNode->GetAvailableBandwidth() + m_bandwithUsed);
 	m_sourceNode->WriteLog("MIGRATION DONE");
+	m_destinationNode->WriteLog(boost::str(boost::format("MIGRATION DONE - New process received with PID %d") % m_migratedProcess->GetId()));
 }

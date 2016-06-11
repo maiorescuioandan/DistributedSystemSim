@@ -18,7 +18,10 @@ public:
 	bool ScheduleMigration(CNode* i_sourceNode, CNode* i_destinationNode, CProcess *i_process);
 	void StopProcessOnSource();
 	void CompleteMigration();
-	CNode* FindNodeWithFreeCpu(CNode* i_sourceNode);
+	CNode* FindNodeWithFreeCpu(CNode* i_sourceNode, CProcess* i_process);
+	CNode* FindNodeWithFreeMem(CNode* i_sourceNode, CProcess* i_process);
+	CProcess* FindProcessToMigrateOnMemOverflow(CNode* i_sourceNode, CNode* i_destinationNode);
+	bool CanBeDestination(CNode* i_destinationNode, CProcess* i_process);
 	EnumMigrationState GetState();
 	double GetAlarmTime();
 private:
