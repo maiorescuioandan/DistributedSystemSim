@@ -172,3 +172,32 @@ double CMasterSingleton::GetMemoryMigrationTreshold()
 {
 	return m_memoryMigrationTreshold;
 }
+
+void CMasterSingleton::SystemBringUp()
+{
+	std::ifstream input_file(c_mainConfigPath);
+	std::string line;
+	uint32_t lineNumber = 0;
+
+	while (std::getline(input_file, line))
+	{
+		++lineNumber;
+		std::vector<std::string> stringVector;
+		Utils::SplitStringInVector(line, Utils::SPACE, stringVector);
+		// Make the first element to lower, as we decide what to do next base on it
+		// and we don't want to make a hard time for the user
+		std::transform(stringVector[0].begin(), stringVector[0].end(), stringVector[0].begin(), ::tolower);
+
+		if (stringVector[0] == "node")
+		{
+			CNode* pNode = new CNode(stringVector[1]);
+			m_mainNodeVector.push_back(pNode);
+		}
+		if (stringVector[0] == "process")
+		{
+			CProcess* pProcess = new CProcess(stringVector[1]);
+			m_mainNodeVector[m_mainNodeVector.size() - 1]->AddProcess(pProcess);
+		}
+	}
+	input_file.close();
+}

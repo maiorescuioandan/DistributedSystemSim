@@ -13,7 +13,7 @@ public:
 
 	static CMasterSingleton* s_instance;
 	void MainLog(std::string i_string);
-
+	void SystemBringUp();
 	void AddNode(CNode* i_node);
 	CNode* GetNode(uint32_t i_nodeIndex);
 	void CreateNodeBackup();
@@ -39,5 +39,6 @@ private:
 	uint32_t			m_currentStatusReportCycle;
 	double				m_memoryMigrationTreshold;
 	//std::vector<CNode*> m_backupNodeVector;
+	const std::string   c_mainConfigPath = "Config/Main.txt";
 };
 

@@ -29,7 +29,7 @@ void basic_testcase_2_mem_2_nodes_2_procs();
 int _tmain(int argc, _TCHAR* argv[])
 {
 	//basic_testcase_1_cpu_2_nodes_2_procs();
-	basic_testcase_2_mem_2_nodes_2_procs();
+	basic_testcase_1_cpu_2_nodes_2_procs();
 	return 0;
 }
 
@@ -45,14 +45,16 @@ void test_mem_leak()
 void basic_testcase_1_cpu_2_nodes_2_procs()
 {
 	// In this testcase, we can see a machine with high CPU usage migrating a process to another machine
-	CNode *node1 = new CNode("Config/Node1Real.txt");
-	CNode *node2 = new CNode("Config/Node2Real.txt");
+	//CNode *node1 = new CNode("Config/Node1Real.txt");
+	//CNode *node2 = new CNode("Config/Node2Real.txt");
+	//
+	//node1->AddProcess(new CProcess("Config/Process6.txt"));
+	//node1->AddProcess(new CProcess("Config/Process6.txt"));
+	//
+	//CMasterSingleton::GetInstance()->AddNode(node1);
+	//CMasterSingleton::GetInstance()->AddNode(node2);
+	CMasterSingleton::GetInstance()->SystemBringUp();
 
-	node1->AddProcess(new CProcess("Config/Process6.txt"));
-	node1->AddProcess(new CProcess("Config/Process6.txt"));
-
-	CMasterSingleton::GetInstance()->AddNode(node1);
-	CMasterSingleton::GetInstance()->AddNode(node2);
 	CMasterSingleton::GetInstance()->SetStatusReportCycle(40);
 	CMasterSingleton::GetInstance()->SetEnableMigration(true);
 	CMasterSingleton::GetInstance()->RunToTime(400);
