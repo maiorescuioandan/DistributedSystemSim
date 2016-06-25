@@ -114,10 +114,16 @@ void CMasterSingleton::RunToTime()
 						CMigrationInfo* migrationInfo = new CMigrationInfo();
 						CNode* destinationNode = migrationInfo->FindNodeWithFreeMem(m_mainNodeVector[i], NULL);
 						if (!destinationNode)
+						{
+							delete migrationInfo;
 							continue;
+						}
 						CProcess* process = migrationInfo->FindProcessToMigrateOnMemOverflow(m_mainNodeVector[i], destinationNode);
 						if (!process)
+						{
+							delete migrationInfo;
 							continue;
+						}
 						if (!migrationInfo->ScheduleMigration(m_mainNodeVector[i], destinationNode, process))
 							delete migrationInfo;
 					}

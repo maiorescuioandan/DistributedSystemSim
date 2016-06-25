@@ -157,7 +157,28 @@ bool CAlgorithmRoundRobin::CheckIfProcessCanRun(CNode *i_node, CProcess *i_proce
 			{
 				if (!i_node->MemAlloc(i_process))
 				{
-					// Handle migration here
+					if (!i_node->IsAlarmUp() && CMasterSingleton::GetInstance()->IsMigrationEnabled())
+					{
+						// 	we should migrate something from this node to another node
+						CMigrationInfo* migrationInfo = new CMigrationInfo();
+						CNode* destinationNode = migrationInfo->FindNodeWithFreeMem(i_node, NULL);
+						if (!destinationNode)
+						{
+							delete migrationInfo;
+							return false;
+						}
+						CProcess* process = migrationInfo->FindProcessToMigrateOnMemOverflow(i_node, destinationNode);
+						if (!process)
+						{
+							delete migrationInfo;
+							return false;
+						}
+						if (!migrationInfo->ScheduleMigration(i_node, destinationNode, process))
+						{
+							delete migrationInfo;
+						}
+					}
+					return false;
 				}
 				else
 				{

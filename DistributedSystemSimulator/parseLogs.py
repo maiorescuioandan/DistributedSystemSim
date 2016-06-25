@@ -16,13 +16,16 @@ def calculateAverageResponseTime(responseTimeTracker):
         responseTimeTracker[id][kEndTimestamps].sort()
         for i in range(min(len(responseTimeTracker[id][kStartTimestamps]), len(responseTimeTracker[id][kEndTimestamps]))):
             responseTimeList.append(responseTimeTracker[id][kEndTimestamps][i] - responseTimeTracker[id][kStartTimestamps][i])
+        if len(responseTimeList) == 0:
+            continue
         print('Process response timestamp list for process id ' + str(id) +': ' + str(responseTimeTracker[id][kEndTimestamps]))
         print('Process response time list for process id ' + str(id) +': ' + str(responseTimeList))
         plt.ylabel('Response Time for process id ' + str(id))
         plt.xlabel('Node time')
+        plt.title('Average response time: ' + str(1.0 * sum(responseTimeList) / len(responseTimeList)))
         print(len(responseTimeTracker[id][kEndTimestamps]), len(responseTimeList))
         plt.plot(responseTimeTracker[id][kEndTimestamps], responseTimeList, 'ro')
-        plt.axis([0, int(max(responseTimeTracker[id][kEndTimestamps]) * 1.1) + 1, 0, int(max(responseTimeList) * 1.1) + 1])
+        plt.axis([0, int(max(responseTimeTracker[id][kEndTimestamps]) + 1) + 1, 0, int(max(responseTimeList) + 1)])
         plt.show()
 
 def calculateCpuUsage(cpuUsageDict):
@@ -39,7 +42,7 @@ def calculateCpuUsage(cpuUsageDict):
         plt.ylabel('CPU usage for node ' + str(node))
         plt.xlabel('Node time')
         plt.plot(xAxis, yAxis, 'ro')
-        plt.axis([0, int(max(xAxis) * 1.1), 0, 1])
+        plt.axis([0, int(max(xAxis) + 1), 0, 1])
         plt.show()
         
 def calculateMemUsage(memUsageDict):
@@ -53,10 +56,10 @@ def calculateMemUsage(memUsageDict):
             yAxis.append(orderedDict[element])
         print(str(xAxis))
         print(str(yAxis))
-        plt.ylabel('Mem usage')
+        plt.ylabel('Mem usage for node ' + str(node))
         plt.xlabel('Node time')
         plt.plot(xAxis, yAxis, 'ro')
-        plt.axis([0, int(max(xAxis) * 1.1), 0, 1])
+        plt.axis([0, int(max(xAxis) + 1), 0, 1])
         plt.show()
         
 
@@ -79,17 +82,8 @@ for file in latestFiles:
             memUsage[currentNodeId] = {}
             cpuUsage[currentNodeId] = {}
         elif words[0] == 'OK':
-            #in this case a new process was created
-            #time = int(words[-1])
             id = int(words[4])
-            #memReq = int(words[6])
             responseTimeTracker[id] = {kStartTimestamps : [], kEndTimestamps : []}
-            #print (memUsage[currentNodeId].keys())
-            #if(time in memUsage[currentNodeId].keys()):
-            #    memUsage[currentNodeId][time] = memReq + memUsage[currentNodeId][time]
-            #else:
-            #    memUsage[currentNodeId][time] = memReq
-            #print (memUsage[currentNodeId].keys())
         elif words[0] == 'LOOP':
             time = float(words[3])
             id = int(words[-1])

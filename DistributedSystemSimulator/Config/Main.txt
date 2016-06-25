@@ -1,14 +1,11 @@
-1 0.8 11000 50
-Node Config/Test_6_3_Node_1.txt
-Process Config/Test_6_3_Process_1.txt
-Process Config/Test_6_3_Process_2.txt
-Process Config/Test_6_3_Process_3.txt
-Process Config/Test_6_3_Process_4.txt
-Process Config/Test_6_3_Process_5.txt
-Process Config/Test_6_3_Process_6.txt
-Process Config/Test_6_3_Process_7.txt
-Process Config/Test_6_3_Process_8.txt
-Process Config/Test_6_3_Process_9.txt
-Process Config/Test_6_3_Process_10.txt
-Node Config/Test_6_3_Node_1.txt
-Node Config/Test_6_3_Node_1.txt
+1 0.8 8000 50
+Node Config/Test_6_4_Node_1.txt
+Process Config/Test_6_4_Process_1.txt
+Process Config/Test_6_4_Process_2.txt
+Process Config/Test_6_4_Process_3.txt
+Process Config/Test_6_4_Process_4.txt
+Process Config/Test_6_4_Process_5.txt
+Process Config/Test_6_4_Process_6.txt
+Node Config/Test_6_4_Node_1.txt
+Node Config/Test_6_4_Node_1.txt
+
