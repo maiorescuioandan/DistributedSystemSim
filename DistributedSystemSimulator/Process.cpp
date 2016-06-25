@@ -10,6 +10,7 @@ CProcess::CProcess()
 {
 	m_isRunning = false;
 	m_sleep = false;
+	m_hasMemAllocated = false;
 }
 
 CProcess::CProcess(CCodeBase i_codeBase, uint32_t i_memoryRequired, uint32_t i_deadline)
@@ -21,6 +22,7 @@ CProcess::CProcess(CCodeBase i_codeBase, uint32_t i_memoryRequired, uint32_t i_d
 	m_deadline = i_deadline;
 	m_markedDeadlineMissed = false;
 	m_sleep = false;
+	m_hasMemAllocated = false;
 	this->Validate();
 }
 
@@ -30,6 +32,7 @@ CProcess::CProcess(std::string i_configFilePath)
 	m_isRunning = false;
 	m_lastDeadlineTick = 0;
 	m_started = false;
+	m_hasMemAllocated = false;
 	m_markedDeadlineMissed = false;
 	m_id = CMasterSingleton::GetInstance()->GetNewProcessId();
 	std::ifstream input_file(i_configFilePath);
@@ -110,6 +113,7 @@ CProcess::CProcess(CProcess* i_process)
 	m_lastDeadlineTick = i_process->m_lastDeadlineTick;
 	m_wakeUpTime = i_process->m_wakeUpTime;
 	m_markedDeadlineMissed = i_process->m_markedDeadlineMissed;
+	m_hasMemAllocated = i_process->m_hasMemAllocated;
 	//std::vector<CMemPage*> m_processPageVector;
 }
 
@@ -287,6 +291,16 @@ void CProcess::SetSleep(bool i_sleep)
 bool CProcess::IsSleeping()
 {
 	return m_sleep;
+}
+
+bool CProcess::HasMemAllocated()
+{
+	return m_hasMemAllocated;
+}
+
+void CProcess::SetMemAllocated(bool i_hasMemAllocated)
+{
+	m_hasMemAllocated = i_hasMemAllocated;
 }
 
 //////////////////////////////////////////////////////////////////////////

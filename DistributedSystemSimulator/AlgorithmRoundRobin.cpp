@@ -153,6 +153,17 @@ bool CAlgorithmRoundRobin::CheckIfProcessCanRun(CNode *i_node, CProcess *i_proce
 		// node current temp time.
 		if (!i_process->IsSleeping() && (i_process->GetWakeUpTime() <= i_node->GetCurrentTimeTemp()))
 		{
+			if (!i_process->HasMemAllocated())
+			{
+				if (!i_node->MemAlloc(i_process))
+				{
+					// Handle migration here
+				}
+				else
+				{
+					i_process->SetMemAllocated(true);
+				}
+			}
 			i_process->SetRunState(true);
 			canRun = true;
 		}

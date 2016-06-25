@@ -36,6 +36,8 @@ public:
 	bool GetMarkedDeadlineMissed();
 	void SetSleep(bool i_sleep);
 	bool IsSleeping();
+	bool HasMemAllocated();
+	void SetMemAllocated(bool i_hasMemAllocated);
 private:
 	void Validate();
 
@@ -51,6 +53,7 @@ private:
 	double		m_wakeUpTime;
 	bool		m_markedDeadlineMissed;
 	bool		m_sleep;
+	bool		m_hasMemAllocated;
 	std::vector<CMemPage*> m_processPageVector;
 };
 

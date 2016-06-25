@@ -238,22 +238,13 @@ bool CNode::AddProcess(CProcess* process)
 {
 	this->WriteLog("# AddProcessStart");
 	bool rValue = false;
-	if (MemAlloc(process))
-	{
-		m_processVector.push_back(process);
 
-		std::stringstream oLog;
-		oLog << boost::format("OK CrtTime %5% PID %1% MEMREQ %2% DEADLINE %3% STARTTIME %4%") % process->GetId() % process->GetMemoryRequired() % process->GetDeadline() % process->GetWakeUpTime() % GetCurrentTimeTemp();
-		this->WriteLog(oLog.str());
-
-		return true;
-	}
-	
+	m_processVector.push_back(process);
 	std::stringstream oLog;
-	oLog << boost::format("FAIL PID %1%") % process->GetId();
+	oLog << boost::format("OK CrtTime %5% PID %1% MEMREQ %2% DEADLINE %3% STARTTIME %4%") % process->GetId() % process->GetMemoryRequired() % process->GetDeadline() % process->GetWakeUpTime() % GetCurrentTimeTemp();
 	this->WriteLog(oLog.str());
 
-	return rValue;
+	return true;
 }
 
 void CNode::AddProcessPostMigration(CProcess* i_process)
