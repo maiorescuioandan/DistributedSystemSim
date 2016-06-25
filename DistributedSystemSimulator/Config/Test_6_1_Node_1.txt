@@ -1,0 +1,6 @@
+Node
+memorySize 300
+pageSize 10
+frequency 2.2
+algorithm RR
+bandwidth 10

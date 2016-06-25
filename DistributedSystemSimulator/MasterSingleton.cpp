@@ -77,7 +77,7 @@ void CMasterSingleton::RevertNodeFromBackup()
 
 }
 
-void CMasterSingleton::RunToTime(double i_time)
+void CMasterSingleton::RunToTime()
 {
 	while (1)	
 	{
@@ -91,7 +91,7 @@ void CMasterSingleton::RunToTime(double i_time)
 				minTime = m_mainNodeVector[i]->GetTime();
 			}
 		}
-		if (minTime > i_time)
+		if (minTime > m_simTimeLimit)
 			return;
 		bool o_deadline = false;
 
@@ -184,6 +184,22 @@ void CMasterSingleton::SystemBringUp()
 		++lineNumber;
 		std::vector<std::string> stringVector;
 		Utils::SplitStringInVector(line, Utils::SPACE, stringVector);
+
+		if (lineNumber == 1)
+		{
+			if (std::stoi(stringVector[0]) == 0)
+				SetEnableMigration(false);
+			else
+				SetEnableMigration(true);
+			
+			SetMemoryMigrationTreshold(std::stod(stringVector[1]));
+			SetSimTimeLimit(std::stoi(stringVector[2]));
+			SetStatusReportCycle(std::stoi(stringVector[3]));
+			continue;
+		}
+
+		if (stringVector.size() != 2)
+			continue;
 		// Make the first element to lower, as we decide what to do next base on it
 		// and we don't want to make a hard time for the user
 		std::transform(stringVector[0].begin(), stringVector[0].end(), stringVector[0].begin(), ::tolower);
@@ -199,5 +215,14 @@ void CMasterSingleton::SystemBringUp()
 			m_mainNodeVector[m_mainNodeVector.size() - 1]->AddProcess(pProcess);
 		}
 	}
+	for (int i = 0; i < m_mainNodeVector.size(); ++i)
+	{
+		m_mainNodeVector[i]->Init();
+	}
 	input_file.close();
+}
+
+void CMasterSingleton::SetSimTimeLimit(uint32_t i_simTimeLimit)
+{
+	m_simTimeLimit = i_simTimeLimit;
 }

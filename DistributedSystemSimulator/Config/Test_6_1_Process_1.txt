@@ -1,0 +1,6 @@
+Process
+requiredMemory 100
+deadline 200
+startTime 0
+CodeBase
+1 80 0

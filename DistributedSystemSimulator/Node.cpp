@@ -243,7 +243,7 @@ bool CNode::AddProcess(CProcess* process)
 		m_processVector.push_back(process);
 
 		std::stringstream oLog;
-		oLog << boost::format("OK PID %1% MEMREQ %2% DEADLINE %3% STARTTIME %4%") % process->GetId() % process->GetMemoryRequired() % process->GetDeadline() %process->GetWakeUpTime();
+		oLog << boost::format("OK CrtTime %5% PID %1% MEMREQ %2% DEADLINE %3% STARTTIME %4%") % process->GetId() % process->GetMemoryRequired() % process->GetDeadline() % process->GetWakeUpTime() % GetCurrentTimeTemp();
 		this->WriteLog(oLog.str());
 
 		return true;
@@ -369,7 +369,7 @@ void CNode::CreateLog()
 	m_log = CLog(ss.str(), false);
 	
 	std::stringstream oLog;
-	oLog << boost::format("Created node with id %1%") % m_id;
+	oLog << boost::format("Created node with id %1% memory size %2%") % m_id % m_memorySize;
 	this->WriteLog(oLog.str());
 	
 	
@@ -442,7 +442,7 @@ void CNode::ReportStatus()
 	double cpuUsage = 1.0 * m_procTicks / (m_nopTicks + m_procTicks);
 	ResetTicks();
 
-	WriteLog(boost::str(boost::format("STATUS: CPU usage: %f \tMEMORY usage: %f") % cpuUsage % GetMemUsage() ));
+	WriteLog(boost::str(boost::format("STATUS CrtTime: %f CPU usage: %f \tMEMORY usage: %f") % GetCurrentTimeTemp() % cpuUsage % GetMemUsage() ));
 	m_cpuUsage = cpuUsage;
 }
 

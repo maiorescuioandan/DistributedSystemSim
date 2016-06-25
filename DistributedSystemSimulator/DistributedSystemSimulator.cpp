@@ -28,8 +28,8 @@ void basic_testcase_2_mem_2_nodes_2_procs();
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//basic_testcase_1_cpu_2_nodes_2_procs();
-	basic_testcase_1_cpu_2_nodes_2_procs();
+	CMasterSingleton::GetInstance()->SystemBringUp();
+	CMasterSingleton::GetInstance()->RunToTime();
 	return 0;
 }
 
@@ -54,10 +54,7 @@ void basic_testcase_1_cpu_2_nodes_2_procs()
 	//CMasterSingleton::GetInstance()->AddNode(node1);
 	//CMasterSingleton::GetInstance()->AddNode(node2);
 	CMasterSingleton::GetInstance()->SystemBringUp();
-
-	CMasterSingleton::GetInstance()->SetStatusReportCycle(40);
-	CMasterSingleton::GetInstance()->SetEnableMigration(true);
-	CMasterSingleton::GetInstance()->RunToTime(400);
+	CMasterSingleton::GetInstance()->RunToTime();
 }
 
 void basic_testcase_2_mem_2_nodes_2_procs()
@@ -74,7 +71,7 @@ void basic_testcase_2_mem_2_nodes_2_procs()
 	CMasterSingleton::GetInstance()->SetStatusReportCycle(40);
 	CMasterSingleton::GetInstance()->SetEnableMigration(true);
 	CMasterSingleton::GetInstance()->SetMemoryMigrationTreshold(0.75);
-	CMasterSingleton::GetInstance()->RunToTime(800);
+	CMasterSingleton::GetInstance()->RunToTime();
 }
 
 void run_2_nodes()
@@ -90,7 +87,7 @@ void run_2_nodes()
 	CMasterSingleton::GetInstance()->AddNode(node2);
 	CMasterSingleton::GetInstance()->SetStatusReportCycle(200);
 	CMasterSingleton::GetInstance()->SetEnableMigration(false);
-	CMasterSingleton::GetInstance()->RunToTime(400);
+	CMasterSingleton::GetInstance()->RunToTime();
 }
 
 void run_1_node()

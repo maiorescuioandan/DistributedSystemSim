@@ -37,6 +37,8 @@ void CAlgorithmRoundRobin::Run(CNode *io_node)
 	// isMemAcess = pProcess->IsNextCommandMemAccess();
 	if (!nop && pProcess->IsRunning())
 	{
+		if (pProcess->GetProgramPointer() == 0)
+			io_node->WriteLog(boost::str(boost::format("LOOP START CrtTime: %f \tPID: %d \t") % io_node->GetCurrentTimeTemp() % pProcess->GetId()));
 		//io_node->m_tempStringStream << "RUN CrtTime:" << io_node->GetCurrentTimeTemp() << "\tPID:" << pProcess->GetId() << "\tProgramPointer:" << pProcess->GetProgramPointer() << "\tIsMemAccess:" << pProcess->IsCurrentCommandMemAccess() << std::endl;
 		io_node->WriteLog(boost::str(boost::format("RUN CrtTime: %f \tPID: %d \tProgramPointer: %d \tIsMemAccess: %d") % io_node->GetCurrentTimeTemp() % pProcess->GetId() % pProcess->GetProgramPointer() % pProcess->IsCurrentCommandMemAccess()));
 		io_node->IncrementProcTicks();
@@ -48,6 +50,7 @@ void CAlgorithmRoundRobin::Run(CNode *io_node)
 		// if this was the last command, we want to do some things
 		if (pProcess->GetProgramPointer() == 0)
 		{
+			io_node->WriteLog(boost::str(boost::format("LOOP END CrtTime: %f \tPID: %d \t") % io_node->GetCurrentTimeTemp() % pProcess->GetId()));
 			// The process reached the deadline and will start next time it's required
 			pProcess->SetRunState(false);
 			// set the process to wake up after the initial deadline passed
